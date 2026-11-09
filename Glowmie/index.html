@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>glowmie. · Good skin. Good mood.</title>
+  <meta name="description" content="Glowmie — skincare fun, doux et accessible. Your skin. Your mood. Your glow. (marque fictive, projet scolaire)">
+  <meta name="theme-color" content="#F5A9CB">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💗%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@700&family=Unbounded:wght@500;700;800;900&family=Manrope:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/da.css">
+</head>
+<body>
+  <a class="skip" href="#main">Aller au contenu</a>
+
+  <div class="site-head">
+    <header class="header">
+      <div class="bar">
+        <a href="#/" class="logo" aria-label="Glowmie, accueil">glowmie.</a>
+        <nav class="nav" aria-label="Navigation principale">
+          <a href="#/shop">Shop</a><a href="#/quiz">Find your glow</a><a href="#/story">Our story</a><a href="#/club">Glow Club</a>
+        </nav>
+        <div class="actions">
+          <button class="icon-btn" id="searchBtn" aria-label="Rechercher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+          <a class="icon-btn" href="#/compte" aria-label="Mon compte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></a>
+          <a class="icon-btn cart-pill" href="#/panier" id="cartBtn" aria-label="Panier"><span>Panier</span><span class="badge" id="cartCount" hidden>0</span></a>
+          <button class="menu-btn" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><span class="menu-lines" aria-hidden="true"><i></i><i></i></span><span class="menu-label">Menu</span></button>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <nav class="mobile-nav" id="mobileNav" aria-label="Menu" aria-hidden="true">
+    <button class="close menu-btn" aria-label="Fermer le menu"><span class="menu-label">Fermer</span></button>
+    <div class="menu-links">
+      <a href="#/"><small>00</small>Accueil</a><a href="#/shop"><small>01</small>Shop</a><a href="#/quiz"><small>02</small>Find your glow</a><a href="#/story"><small>03</small>Our story</a><a href="#/club"><small>04</small>Glow Club</a><a href="#/journal"><small>05</small>Journal</a><a href="#/compte"><small>06</small>Mon compte</a>
+    </div>
+    <div class="menu-aside"><p>Livraison offerte dès 35 €<br>Code <b>HELLOGLOW</b> · -10 % sur ta première commande</p><img src="assets/packshots/glow-drops.png" alt="" class="menu-pack"></div>
+  </nav>
+
+  <main id="main" tabindex="-1"></main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div><h4>Your skin. Your mood. Your glow.</h4><p style="max-width:36ch;opacity:.9">Skincare fun, doux et accessible pour les 18–28 ans. Glowmie est une marque fictive réalisée pour un projet scolaire.</p>
+          <button class="motion-toggle" id="motionToggle"></button></div>
+        <div><h4>Shop</h4><a href="#/shop">Tous les produits</a><a href="#/produit/glow-drops">Glow Drops</a><a href="#/produit/daily-cloud">Daily Cloud</a><a href="#/produit/glow-routine">Coffret</a></div>
+        <div><h4>Glowmie</h4><a href="#/story">Our story</a><a href="#/club">Glow Club</a><a href="#/journal">Glow Journal</a><a href="#/quiz">Find your glow</a></div>
+        <div><h4>Aide</h4><a href="#/compte">Mon compte</a><a href="#/legal/cgv">CGV</a><a href="#/legal/confidentialite">Confidentialité</a><a href="#/legal/cookies">Cookies</a><a href="#/legal/mentions">Mentions légales</a><a href="admin.html">Espace admin (CRM)</a></div>
+      </div>
+      <span class="logo" aria-hidden="true">glowmie.</span>
+      <div class="legal-row"><span>© 2026 Glowmie · projet fictif</span><span>Paiements en mode test · aucune donnée réelle</span></div>
+    </div>
+  </footer>
+
+  <aside class="drawer" id="drawer" aria-label="Panier" aria-hidden="true">
+    <header><h2 style="font-size:2rem;margin:0">Ton panier</h2><button class="icon-btn" id="drawerClose" aria-label="Fermer le panier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="body" id="drawerBody"></div>
+    <footer id="drawerFoot"></footer>
+  </aside>
+  <div class="drawer-backdrop" id="drawerBg"></div>
+
+  <div class="cookie" id="cookie" role="dialog" aria-label="Cookies" hidden>
+    <b style="font-family:var(--font-display);color:var(--berry);font-size:1.2rem">Un petit cookie ? 🍪</b>
+    <p style="margin:6px 0 0;font-size:.9rem">On stocke sur ton appareil le strict nécessaire (panier, compte). Avec ton accord, on compte aussi les visites de façon anonyme. <a href="#/legal/cookies">En savoir plus</a></p>
+    <div class="btns"><button class="btn ghost small" data-cookie="essential">Refuser le non-essentiel</button><button class="btn small" data-cookie="all">Accepter</button></div>
+  </div>
+
+  <div class="toast-zone" id="toasts" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/scene3d.js"></script>
+  <script src="js/stage3d.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
