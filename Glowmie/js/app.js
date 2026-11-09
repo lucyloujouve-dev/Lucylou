@@ -111,7 +111,7 @@
     return `
     <section class="s-hero" data-scene="hero" data-bg="#FFF4EF">
       <div class="layer back">
-        <p class="hero-kicker reveal-up">Skincare fun, doux & glossy<br><em>pour les 18–28 ans</em></p>
+        <p class="hero-kicker reveal-up">Skincare fun, doux & glossy</p>
         <h1 class="wordmark" aria-label="Glowmie">${'GLOWMIE'.split('').map((l, i) => `<span style="--i:${i}">${l}</span>`).join('')}</h1>
         <img class="still still-hero" src="${DB.product('glow-drops').packshot}" alt="Glow Drops, sérum éclat Glowmie">
         <div class="hero-foot">
