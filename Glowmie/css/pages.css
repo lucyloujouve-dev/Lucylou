@@ -30,8 +30,8 @@ p { margin: 0 0 14px; }
 .eyebrow { font-weight: 800; font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--fuchsia); margin: 0 0 16px; }
 .hero h1 { font-size: clamp(2.3rem, 6.5vw, 5rem); max-width: 14ch; }
 .hero .lead { font-size: clamp(1.05rem, 1.6vw, 1.25rem); max-width: 60ch; margin: 22px 0 0; color: var(--muted); }
-.hero .packs { position: absolute; right: -10px; top: 40px; display: flex; gap: 0; pointer-events: none; }
-.hero .packs img { width: 130px; mix-blend-mode: multiply; filter: drop-shadow(0 18px 24px rgba(42, 11, 34, .12)); }
+.hero .packs { position: absolute; right: -10px; top: 40px; display: flex; align-items: flex-start; gap: 0; pointer-events: none; }
+.hero .packs img { width: 130px; height: auto; object-fit: contain; mix-blend-mode: multiply; filter: drop-shadow(0 18px 24px rgba(42, 11, 34, .12)); }
 .hero .packs img:nth-child(2) { transform: translateY(40px) rotate(6deg); margin-left: -30px; }
 .hero .packs img:nth-child(3) { transform: translateY(-10px) rotate(-8deg); margin-left: -30px; }
 .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
