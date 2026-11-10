@@ -358,3 +358,4 @@ ul.no li::before { content: '✕'; font-weight: 900; color: #c0264f; margin-righ
 .offer-box p { grid-column: 1 / -1; margin: 4px 0 0; font-size: .82rem; }
 .ttc { font-size: .45em; font-weight: 700; opacity: .6; }
 @media (max-width: 900px) { .plans { grid-template-columns: 1fr; } .offer-box { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .page-hero h1 { font-size: 11.5vw; } }
