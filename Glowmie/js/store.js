@@ -22,6 +22,7 @@ window.GlowDB = (function () {
       db.cart = []; db.session = null; db.promoApplied = null; db.adminSession = false;
       save(true);
     }
+    if (!db.messages) { db.messages = clone(window.GLOW_SEED.messages || []); save(true); }
     return db;
   }
   function save(silent) {
@@ -258,6 +259,45 @@ window.GlowDB = (function () {
   }
   function trackVisit() { const d = new Date().toISOString().slice(0, 10); db.visits[d] = (db.visits[d] || 0) + 1; save(true); }
 
+  /* ---------- pipeline commercial (étapes modifiables) ---------- */
+  const STAGES = ['nouveau', 'interesse', 'panier', 'client', 'fidele'];
+  // étape enregistrée si l'équipe l'a modifiée, sinon étape proposée d'après le parcours du contact
+  function stageOf(c) {
+    if (c.stage && STAGES.includes(c.stage)) return c.stage;
+    const seg = segmentOf(c);
+    if (seg === 'vip' || seg === 'fidele') return 'fidele';
+    if (seg === 'primo' || seg === 'inactif') return 'client';
+    const evs = db.events.filter((e) => e.customerId === c.id);
+    if (evs.some((e) => e.type === 'checkout_abandoned' || e.type === 'add_to_cart')) return 'panier';
+    if (evs.some((e) => e.type === 'quiz_completed') || db.quizResults.some((q) => q.customerId === c.id)) return 'interesse';
+    return 'nouveau';
+  }
+  function setStage(id, stage) {
+    const c = customer(id); if (!c || !STAGES.includes(stage)) return;
+    const from = stageOf(c); if (from === stage) return;
+    c.stage = stage;
+    db.events.push({ id: uid('e'), type: 'stage_changed', customerId: id, at: Date.now(), data: { from, to: stage } });
+    save();
+  }
+
+  /* ---------- messages du formulaire de contact ---------- */
+  function contactMessage(data) {
+    db.messages = db.messages || [];
+    let c = byEmail(data.email);
+    if (!c) {
+      c = { id: uid('c'), firstName: data.firstName || '', lastName: data.lastName || '', email: data.email.trim().toLowerCase(), phone: '', city: '', createdAt: Date.now(), role: 'customer', pwd: null,
+        consent: { newsletter: false, quiz: false, date: Date.now() }, points: 0, notes: '', favorites: [], addresses: [], source: 'contact' };
+      db.customers.push(c);
+    }
+    const m = { id: uid('m'), customerId: c.id, name: `${data.firstName || ''} ${data.lastName || ''}`.trim(), email: c.email, subject: data.subject, orderNumber: data.orderNumber || '', message: data.message, at: Date.now(), status: 'nouveau' };
+    db.messages.push(m);
+    db.events.push({ id: uid('e'), type: 'contact_message', customerId: c.id, at: m.at, data: { messageId: m.id } });
+    save();
+    return m;
+  }
+  const messages = () => (db.messages || []).slice().sort((a, b) => b.at - a.at);
+  function setMessageStatus(id, status) { const m = (db.messages || []).find((x) => x.id === id); if (m) { m.status = status; save(); } }
+
   load();
   return {
     DAY, get raw() { return db; }, save, reset, onChange: (fn) => listeners.push(fn), uid, round,
@@ -267,6 +307,7 @@ window.GlowDB = (function () {
     orders, order, ordersFor, placeOrder, setOrderStatus,
     saveQuiz, newsletter, addReview, moderateReview, track, runScheduled,
     segmentOf, clientStats, tier, stats, trackVisit,
+    STAGES, stageOf, setStage, contactMessage, messages, setMessageStatus,
     adminLogin(code) { if (code !== 'glowmie-admin') throw new Error('Code administrateur incorrect.'); db.adminSession = true; save(true); },
     adminLogout() { db.adminSession = false; save(true); },
     isAdmin: () => !!db.adminSession
