@@ -175,3 +175,5 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .deal .adv:hover { background: var(--berry-dark); }
 .demo-creds { background: var(--petal); border-radius: 14px; padding: 12px 14px; margin: 4px 0 12px; font-size: .9rem; color: var(--berry-dark); }
 .demo-creds code { font-weight: 800; font-size: 1rem; }
+.deal, .kcol { position: relative; }
+.kanban { max-width: 100%; }
