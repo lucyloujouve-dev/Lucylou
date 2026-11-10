@@ -454,29 +454,29 @@ window.GLOW_SEED = (function () {
   reviews.push({ id: 'r' + (++rn), productId: 'sun-sunny', author: 'Maëlys', rating: 5, text: "Je viens de le recevoir et je l'adore déjà, fini invisible !", status: 'en_attente', at: now - 2 * DAY });
 
   const photos = {
-    collection: { src: "assets/glowmie-collection.jpg", alt: "La collection Glowmie : Fresh Start, Glow Drops, Daily Cloud et gloss sur fond rose", pos: "50% 60%" },
-    swatchBeige: { id: "1585945037805-5fd82c2e60b1", alt: "Trace de crème blanche sur fond beige" },
+    collection: { src: "assets/a-envoyer/glowmie-50.webp", alt: "La gamme Glowmie sur fond rose : gel nettoyant, sérum, SPF 50, baume à lèvres et Daily Cloud" },
+    swatchBeige: { src: "assets/a-envoyer/glowmie-54.webp", alt: "Sérum éclat, fluide SPF 50 et crème hydratante Glowmie" },
     swatchesFabric: { id: "1609097164673-7cfafb51b926", alt: "Swatches de crème sur un tissu" },
-    serumDrops: { id: "1748543668687-624e058c367c", alt: "Gouttes de sérum transparentes" },
+    serumDrops: { src: "assets/a-envoyer/glowmie-56.webp", alt: "Goutte de sérum hydratant Glowmie" },
     swatchGrey: { id: "1608068811588-3a67006b7489", alt: "Trace de crème hydratante sur fond clair" },
     bubbles: { id: "1518842013791-b874be246c34", alt: "Bulles de lotion en gros plan" },
-    cheekCream: { id: "1693004927824-f2623bbedc8b", alt: "Femme appliquant une noisette de crème sur la joue" },
+    cheekCream: { src: "assets/a-envoyer/glowmie-47.webp", alt: "Jeune femme qui applique la crème rose Glowmie devant le miroir" },
     underEye: { id: "1660911582546-2897e25c3b26", alt: "Crème appliquée sous l'oeil" },
-    smileTouch: { id: "1728727267814-792db55ce678", alt: "Femme souriante qui touche sa peau" },
-    touchFace: { id: "1702312686957-572286d28e11", alt: "Femme qui applique un soin du bout des doigts" },
-    cheekSmile: { id: "1693004923522-806dafe5a1a0", alt: "Point de crème sur la joue d'une femme souriante" },
-    maskLaugh: { id: "1646457417455-77a66a9fcf34", alt: "Femme qui rit avec un soin sur le visage" },
-    applyBright: { id: "1661346376364-706a9eac60ab", alt: "Femme appliquant une crème dans une salle de bain lumineuse" },
-    washFace: { id: "1785464430188-bfa8c6b20ec1", alt: "Femme qui se nettoie le visage" },
-    foamHands: { id: "1508759073847-9ca702cec7d2", alt: "Mousse nettoyante dans le creux des mains" },
-    dropperSkin: { id: "1573461160327-b450ce3d8e7f", alt: "Pipette de sérum au-dessus de la peau" },
-    serumPink: { id: "1741896135512-084b251887f7", alt: "Flacon de sérum sur fond rose" },
-    smileGlow: { id: "1782931684641-39b88b348e1e", alt: "Femme souriante à la peau lumineuse" },
+    smileTouch: { src: "assets/a-envoyer/glowmie-49.webp", alt: "Routine Glowmie devant le miroir de la salle de bain" },
+    touchFace: { src: "assets/a-envoyer/glowmie-55.webp", alt: "Pipette de sérum Glowmie appliquée sur la joue" },
+    cheekSmile: { src: "assets/a-envoyer/glowmie-60.webp", alt: "Jeune femme qui applique la crème hydratante Glowmie" },
+    maskLaugh: { src: "assets/a-envoyer/glowmie-51.webp", alt: "La gamme Glowmie sur des marches roses, fond bleu" },
+    applyBright: { src: "assets/a-envoyer/glowmie-58.webp", alt: "Sérum, SPF 50, mousse nettoyante et crème Glowmie sur fond bleu" },
+    washFace: { src: "assets/a-envoyer/glowmie-48.webp", alt: "Gel nettoyant douceur Glowmie sur fond lilas" },
+    foamHands: { src: "assets/a-envoyer/glowmie-61.webp", alt: "La gamme Glowmie sur fond bleu" },
+    dropperSkin: { src: "assets/a-envoyer/glowmie-57.webp", alt: "Goutte de sérum Glowmie sur la peau en gros plan" },
+    serumPink: { src: "assets/a-envoyer/glowmie-52.webp", alt: "Sérum éclat, gel nettoyant et crème Daily Cloud Glowmie" },
+    smileGlow: { src: "assets/a-envoyer/glowmie-59.webp", alt: "Jeune femme qui présente le sérum rose Glowmie" },
     texturePink: { id: "1581016327131-6cf17ab1f2c1", alt: "Texture fouettée rose" },
     creamSwirl: { id: "1648213649604-2a079932a773", alt: "Texture de crème onctueuse" },
     swatchButter: { id: "1632127579802-ff69469091a4", alt: "Trace de crème sur fond jaune" },
     armDots: { id: "1603401712778-ab0575182f12", alt: "Bras avec trois touches de crème" },
-    headband: { id: "1609357912334-e96886c0212b", alt: "Jeune femme avec un bandeau, peau fraîche" }
+    headband: { src: "assets/a-envoyer/glowmie-62.webp", alt: "Ma routine Glowmie : bandeau rose, sérum, crème et SPF" }
   };
 
   // messages reçus via le formulaire de contact
