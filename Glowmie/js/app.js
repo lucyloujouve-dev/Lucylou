@@ -115,7 +115,7 @@
         <h1 class="wordmark" aria-label="Glowmie">${'GLOWMIE'.split('').map((l, i) => `<span style="--i:${i}">${l}</span>`).join('')}</h1>
         <img class="still still-hero" src="${DB.product('glow-drops').packshot}" alt="Glow Drops, sérum éclat Glowmie">
         <div class="hero-foot">
-          <p class="hero-line"><b>Good skin. Good mood.</b> Des formules douces, des packagings qui donnent envie, des routines qui tiennent en trois gestes.</p>
+          <p class="hero-line"><b>Good skin. Good mood.</b> Pour toutes celles et ceux qui se perdent dans la skincare : des soins doux et une routine en 3 gestes pour une peau nette, hydratée et lumineuse, sans prise de tête.</p>
           <div class="hero-ctas"><a class="pill-btn" href="#/shop">Shop now <span>→</span></a><a class="pill-btn ghost" href="#/quiz">Find your glow ✦</a></div>
         </div>
         <div class="scroll-cue" aria-hidden="true"><span></span>Scroll</div>
@@ -208,7 +208,7 @@
   /* ---------- shop ---------- */
   const shopState = { cat: 'all', need: 'all', q: '', sort: 'pop', max: 60 };
   views.shop = () => `
-    <section class="page-hero"><p class="eyebrow">La boutique</p><h1>Shop</h1><p>Des essentiels doux et joyeux pour une routine qui te ressemble.</p></section>
+    <section class="page-hero"><p class="eyebrow">La boutique</p><h1>Shop</h1><p>Des essentiels doux et joyeux pour une routine qui te ressemble. Tous les prix sont en euros TTC. <a href="#/offres">Comparer nos formules →</a></p></section>
     <div class="wrap shop-layout">
       <aside class="filters" aria-label="Filtres">
         <label for="search">Rechercher</label><input id="search" type="search" placeholder="Sérum, crème…" value="${esc(shopState.q)}">
@@ -276,6 +276,11 @@
           <button class="btn" id="addBtn">Ajouter au panier <span class="arrow">→</span></button>
           <button class="fav ${fav ? 'on' : ''}" style="position:static;box-shadow:var(--shadow-sm)" data-fav="${p.id}" aria-pressed="${!!fav}" aria-label="Favori">${I.heart}</button>
         </div>
+        <div class="offer-box">
+          <div><h4>Inclus</h4><ul class="yes">${p.shape === 'set' ? `<li>${p.ingredients.map(esc).join(', ')}</li>` : '<li>Le soin dans le format choisi</li>'}<li>Livraison offerte dès 35 € d’achat</li><li>Retours gratuits sous 30 jours</li><li>10 points Glow Club par euro dépensé</li></ul></div>
+          <div><h4>Non inclus</h4><ul class="no"><li>Livraison sous 35 € : 4,90 € TTC</li>${p.shape === 'set' ? '<li>Choix des produits du coffret (composition fixe)</li>' : '<li>Bandeau et accessoires (dans le coffret uniquement)</li>'}<li>Aucun abonnement ni engagement</li></ul></div>
+          <p class="muted"><a href="#/offres">Voir toutes les formules</a> · Prix en euros TTC</p>
+        </div>
         <div class="acc">
           <details open><summary>Composition</summary><div><div class="ingredients">${p.ingredients.map((i) => `<span>${esc(i)}</span>`).join('')}</div><p class="muted" style="margin-top:10px;font-size:.88rem">Composition fictive à but de démonstration.</p></div></details>
           <details><summary>Conseils d'utilisation</summary><div><p>${esc(p.tips)}</p></div></details>
@@ -306,7 +311,7 @@
       window.addEventListener('scroll', onSc, { passive: true }); cleanup.push(() => window.removeEventListener('scroll', onSc));
     }
     const paint = () => {
-      $('#pdpPrice').innerHTML = eur(v.price) + (p.compareAt && v === p.variants[0] ? ` <s class="muted" style="font-size:.6em">${eur(p.compareAt)}</s>` : '');
+      $('#pdpPrice').innerHTML = eur(v.price) + ' <small class="ttc">TTC</small>' +(p.compareAt && v === p.variants[0] ? ` <s class="muted" style="font-size:.6em">${eur(p.compareAt)}</s>` : '');
       const st = $('#stock'); st.className = 'stock ' + (v.stock <= 15 ? 'low' : 'ok');
       st.textContent = v.stock <= 0 ? 'Épuisé' : v.stock <= 15 ? `Plus que ${v.stock} en stock !` : 'En stock · expédié sous 48 h';
       $('#addBtn').disabled = v.stock <= 0; $('#qVal').textContent = q;
@@ -573,7 +578,7 @@
       <div class="sum"><span>Sous-total</span><span>${eur(t.subtotal)}</span></div>
       ${t.discount ? `<div class="sum" style="color:#23824f"><span>Réduction</span><span>−${eur(t.discount)}</span></div>` : ''}
       <div class="sum"><span>Livraison</span><span>${t.shipping ? eur(t.shipping) : 'Offerte'}</span></div>
-      <div class="sum total"><span>Total</span><span>${eur(t.total)}</span></div>
+      <div class="sum total"><span>Total TTC</span><span>${eur(t.total)}</span></div>
       <a class="btn block" href="#/checkout" style="margin-top:12px">Passer commande <span class="arrow">→</span></a>`;
   }
   function bindCart(root) {
@@ -630,7 +635,7 @@
       </div>
       <aside class="panel" style="position:sticky;top:100px"><h3>Ta commande</h3>
         ${t.lines.map((l) => `<div class="line" style="grid-template-columns:56px 1fr auto"><div class="thumb ${bgFor(l.product)}" style="height:60px">${Art.product(l.product)}</div><div><b>${esc(l.product.name)}</b><br><span class="muted" style="font-size:.85rem">${esc(l.variant.label)} × ${l.qty}</span></div><b>${eur(l.total)}</b></div>`).join('')}
-        <div style="margin-top:12px"><div class="sum"><span>Sous-total</span><span>${eur(t.subtotal)}</span></div>${t.discount ? `<div class="sum" style="color:#23824f"><span>Réduction (${t.promo.code})</span><span>−${eur(t.discount)}</span></div>` : ''}<div class="sum"><span>Livraison</span><span>${t.shipping ? eur(t.shipping) : 'Offerte'}</span></div><div class="sum total"><span>Total</span><span>${eur(t.total)}</span></div></div>
+        <div style="margin-top:12px"><div class="sum"><span>Sous-total</span><span>${eur(t.subtotal)}</span></div>${t.discount ? `<div class="sum" style="color:#23824f"><span>Réduction (${t.promo.code})</span><span>−${eur(t.discount)}</span></div>` : ''}<div class="sum"><span>Livraison</span><span>${t.shipping ? eur(t.shipping) : 'Offerte'}</span></div><div class="sum total"><span>Total TTC</span><span>${eur(t.total)}</span></div></div>
         <p class="muted" style="font-size:.85rem">+ ${Math.round(t.total * 10)} points Glow Club</p>
         <p class="error" id="coErr" aria-live="assertive"></p>
         <button class="btn block" id="payBtn">Payer ${eur(t.total)} <span class="arrow">→</span></button>
@@ -755,6 +760,30 @@
     if (del) del.onclick = () => { if (confirm('Supprimer ton compte ? Tes données personnelles seront anonymisées (les commandes restent conservées pour la comptabilité).')) { DB.deleteCustomer(DB.me().id); toast('Compte supprimé'); location.hash = '#/'; } };
   }
 
+  /* ---------- offre détaillée ---------- */
+  views.offres = () => {
+    const set = DB.product('glow-routine'); const singles = DB.products().filter((p) => p.shape !== 'set');
+    const min = Math.min(...singles.flatMap((p) => p.variants.map((v) => v.price))), max = Math.max(...singles.flatMap((p) => p.variants.map((v) => v.price)));
+    const plan = (o) => `<article class="plan ${o.hot ? 'hot' : ''}" data-reveal>${o.hot ? '<span class="plan-badge">Le plus choisi</span>' : ''}<p class="eyebrow">${o.kicker}</p><h2>${o.name}</h2>
+      <p class="plan-price">${o.price}<small> TTC</small></p><p class="plan-for">${o.for}</p>
+      <h4>Inclus</h4><ul class="yes">${o.yes.map((x) => `<li>${x}</li>`).join('')}</ul>
+      <h4>Non inclus</h4><ul class="no">${o.no.map((x) => `<li>${x}</li>`).join('')}</ul>
+      <a class="btn ${o.hot ? '' : 'ghost'} block" href="${o.href}">${o.cta} <span class="arrow">→</span></a></article>`;
+    return `<section class="page-hero"><p class="eyebrow">L'offre Glowmie</p><h1>Formules</h1><p>Pour toutes celles et ceux qui se perdent dans la skincare : des soins doux et une routine en 3 gestes pour une peau nette, hydratée et lumineuse, sans prise de tête.</p></section>
+    <div class="wrap plans">
+      ${plan({ kicker: 'Formule 1', name: 'À l’unité', price: `${eur(min)} – ${eur(max)}`, for: 'Tu sais ce qu’il te faut, ou tu veux compléter ta routine.', href: '#/shop', cta: 'Choisir mes soins',
+        yes: [`Le soin de ton choix parmi ${singles.length} produits`, 'Plusieurs formats sur certains soins (ex. 30 ml ou 50 ml)', 'Livraison offerte dès 35 € d’achat', 'Retours gratuits sous 30 jours', '10 points Glow Club par euro'],
+        no: ['Livraison sous 35 € : 4,90 € TTC', 'Bandeau éponge (réservé au coffret)', 'Aucun abonnement ni engagement'] })}
+      ${plan({ kicker: 'Formule 2', name: esc(set.name), price: `${eur(set.price)} <s>${eur(set.compareAt)}</s>`, for: 'Tu débutes et tu veux une routine complète, prête à l’emploi.', href: '#/produit/glow-routine', cta: 'Voir le coffret', hot: true,
+        yes: set.ingredients.map(esc).concat(['Livraison offerte (plus de 35 €)', 'Fiche routine matin et soir', `Économie de ${eur(set.compareAt - set.price)} par rapport à l’unité`]),
+        no: ['Choix des produits (composition fixe)', 'Protection solaire Sun Sunny (à ajouter)', 'Aucun abonnement ni engagement'] })}
+      ${plan({ kicker: 'Formule 3', name: 'Glow Club', price: '0 €', for: 'Tu commandes régulièrement et tu veux être récompensé·e.', href: '#/club', cta: 'Rejoindre le club',
+        yes: ['Adhésion gratuite avec ton compte', '10 points par euro, 3 niveaux (Glow, Shine, Superstar)', 'Code -15 % et miniatures dès le niveau Shine', 'Avant-premières et coffret cadeau au niveau Superstar'],
+        no: ['Les produits : le club s’ajoute aux formules 1 et 2', 'Points non convertibles en argent', 'Aucune cotisation'] })}
+    </div>
+    <div class="wrap"><p class="muted plans-note">Tous les prix sont en euros TTC (TVA 20 % incluse). Paiement simulé en mode test : aucun débit réel. Questions ? <a href="#/faq">FAQ</a> · <a href="#/contact">Contact</a></p></div>`;
+  };
+
   /* ---------- FAQ & contact ---------- */
   const FAQ = [
     ['Commande & livraison', [
@@ -827,7 +856,7 @@
   /* ================= ROUTEUR ================= */
   let cleanup = [], pageRepaint = null, lastRoute = '';
   const mounts = { home: homeMount, shop: shopMount, produit: produitMount, quiz: () => { quiz.i = 0; quiz.answers = {}; quizMount(); }, compte: compteMount, panier: panierMount, checkout: checkoutMount, contact: contactMount };
-  const titles = { home: 'Good skin. Good mood.', shop: 'Shop', produit: 'Produit', quiz: 'Find your glow', story: 'Our story', club: 'Glow Club', journal: 'Glow Journal', compte: 'Mon compte', panier: 'Panier', checkout: 'Paiement', confirmation: 'Merci !', legal: 'Informations', faq: 'FAQ', contact: 'Contact' };
+  const titles = { home: 'Good skin. Good mood.', shop: 'Shop', produit: 'Produit', quiz: 'Find your glow', story: 'Our story', club: 'Glow Club', journal: 'Glow Journal', compte: 'Mon compte', panier: 'Panier', checkout: 'Paiement', confirmation: 'Merci !', legal: 'Informations', faq: 'FAQ', contact: 'Contact', offres: 'Nos formules' };
 
   function parse() { const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean); return { name: parts[0] || 'home', arg: parts[1] }; }
   function render() {
