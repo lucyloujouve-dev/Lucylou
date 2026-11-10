@@ -834,6 +834,7 @@
   const mounts = { home: homeMount, shop: shopMount, produit: produitMount, quiz: () => { quiz.i = 0; quiz.answers = {}; quizMount(); }, compte: compteMount, panier: panierMount, checkout: checkoutMount, contact: contactMount };
   const titles = { home: 'Good skin. Good mood.', shop: 'Shop', produit: 'Produit', quiz: 'Find your glow', story: 'Our story', club: 'Glow Club', journal: 'Glow Journal', compte: 'Mon compte', panier: 'Panier', checkout: 'Paiement', confirmation: 'Merci !', legal: 'Informations', faq: 'FAQ', contact: 'Contact' };
 
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   function parse() { const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean); return { name: parts[0] || 'home', arg: parts[1] }; }
   function render() {
     const r = parse();
@@ -847,9 +848,13 @@
     document.title = (r.name === 'produit' && DB.product(r.arg) ? DB.product(r.arg).name : titles[r.name] || 'Glowmie') + ' · glowmie.';
     $$('.nav a, .mobile-nav a').forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#/' + r.name));
     const key = r.name + '/' + (r.arg || '');
-    if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; }
+    const changed = key !== lastRoute; lastRoute = key;
+    // nouvelle page : on repart du haut, sans animation (le défilement doux serait interrompu par le rendu)
+    const toTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (changed) toTop();
     (mounts[r.name] || (() => {}))(r.arg);
     afterRender();
+    if (changed) { toTop(); requestAnimationFrame(toTop); }
   }
   function afterRender() {
     updateBadge();
