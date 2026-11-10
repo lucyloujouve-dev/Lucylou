@@ -87,7 +87,8 @@ window.GlowDB = (function () {
     const c = {
       id: uid('c'), firstName: data.firstName || '', lastName: data.lastName || '', email: data.email.trim().toLowerCase(),
       phone: data.phone || '', city: data.city || '', createdAt: Date.now(), role: 'customer', pwd: data.password ? hash(data.password) : null,
-      consent: { newsletter: !!data.newsletter, quiz: !!data.quizConsent, date: Date.now() }, points: 0, notes: '', favorites: [], addresses: []
+      consent: { newsletter: !!data.newsletter, quiz: !!data.quizConsent, date: Date.now() }, points: 0, notes: '', favorites: [], addresses: [],
+      source: 'site', exchanges: []
     };
     db.customers.push(c);
     track('account_created', c.id);
@@ -260,18 +261,27 @@ window.GlowDB = (function () {
   function trackVisit() { const d = new Date().toISOString().slice(0, 10); db.visits[d] = (db.visits[d] || 0) + 1; save(true); }
 
   /* ---------- pipeline commercial (étapes modifiables) ---------- */
-  const STAGES = ['nouveau', 'interesse', 'panier', 'client', 'fidele'];
-  // étape enregistrée si l'équipe l'a modifiée, sinon étape proposée d'après le parcours du contact
+  const STAGES = ['nouveau', 'contacte', 'proposition', 'gagne', 'perdu'];
+  // étape enregistrée si l'équipe l'a modifiée, sinon étape proposée d'après le parcours du contact.
+  // Une commande passée sur la boutique fait automatiquement passer le contact en « gagné ».
   function stageOf(c) {
-    if (c.stage && STAGES.includes(c.stage)) return c.stage;
-    const seg = segmentOf(c);
-    if (seg === 'vip' || seg === 'fidele') return 'fidele';
-    if (seg === 'primo' || seg === 'inactif') return 'client';
+    const bought = ordersFor(c.id).some((o) => o.status !== 'annulee' && o.status !== 'remboursee');
+    if (c.stage && STAGES.includes(c.stage)) return bought && c.stage !== 'perdu' ? 'gagne' : c.stage;
+    if (bought) return 'gagne';
     const evs = db.events.filter((e) => e.customerId === c.id);
-    if (evs.some((e) => e.type === 'checkout_abandoned' || e.type === 'add_to_cart')) return 'panier';
-    if (evs.some((e) => e.type === 'quiz_completed') || db.quizResults.some((q) => q.customerId === c.id)) return 'interesse';
+    if (evs.some((e) => e.type === 'checkout_abandoned' || e.type === 'add_to_cart')) return 'proposition';
+    if ((c.exchanges || []).length > 1 || evs.some((e) => e.type === 'quiz_completed' || e.type === 'contact_message')) return 'contacte';
+    if (Date.now() - c.createdAt > 90 * DAY) return 'perdu';
     return 'nouveau';
   }
+  const sourceOf = (c) => c.source || 'site';
+  function addExchange(id, ex) {
+    const c = customer(id); if (!c) return;
+    c.exchanges = c.exchanges || [];
+    c.exchanges.push({ id: uid('x'), at: Date.now(), by: 'Équipe Glowmie', ...ex });
+    save();
+  }
+  function setNextAction(id, action) { const c = customer(id); if (!c) return; c.nextAction = action; save(); }
   function setStage(id, stage) {
     const c = customer(id); if (!c || !STAGES.includes(stage)) return;
     const from = stageOf(c); if (from === stage) return;
@@ -286,11 +296,14 @@ window.GlowDB = (function () {
     let c = byEmail(data.email);
     if (!c) {
       c = { id: uid('c'), firstName: data.firstName || '', lastName: data.lastName || '', email: data.email.trim().toLowerCase(), phone: '', city: '', createdAt: Date.now(), role: 'customer', pwd: null,
-        consent: { newsletter: false, quiz: false, date: Date.now() }, points: 0, notes: '', favorites: [], addresses: [], source: 'contact' };
+        consent: { newsletter: false, quiz: false, date: Date.now() }, points: 0, notes: '', favorites: [], addresses: [], source: 'formulaire', exchanges: [] };
       db.customers.push(c);
     }
     const m = { id: uid('m'), customerId: c.id, name: `${data.firstName || ''} ${data.lastName || ''}`.trim(), email: c.email, subject: data.subject, orderNumber: data.orderNumber || '', message: data.message, at: Date.now(), status: 'nouveau' };
     db.messages.push(m);
+    c.exchanges = c.exchanges || [];
+    c.exchanges.push({ id: uid('x'), at: m.at, type: 'formulaire', text: `${m.subject} : ${m.message}`, by: c.firstName || 'Contact' });
+    if (!c.nextAction) c.nextAction = { text: 'Répondre au message reçu via le site', due: m.at + 2 * DAY };
     db.events.push({ id: uid('e'), type: 'contact_message', customerId: c.id, at: m.at, data: { messageId: m.id } });
     save();
     return m;
@@ -307,7 +320,7 @@ window.GlowDB = (function () {
     orders, order, ordersFor, placeOrder, setOrderStatus,
     saveQuiz, newsletter, addReview, moderateReview, track, runScheduled,
     segmentOf, clientStats, tier, stats, trackVisit,
-    STAGES, stageOf, setStage, contactMessage, messages, setMessageStatus,
+    STAGES, stageOf, setStage, contactMessage, messages, setMessageStatus, sourceOf, addExchange, setNextAction,
     adminLogin(code) { if (code !== 'glowmie-admin') throw new Error('Code administrateur incorrect.'); db.adminSession = true; save(true); },
     adminLogout() { db.adminSession = false; save(true); },
     isAdmin: () => !!db.adminSession
