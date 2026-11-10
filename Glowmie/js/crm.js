@@ -14,8 +14,11 @@
   const SEG = { prospect: ['Prospects', 'Inscrits sans commande', '#9aa3b5'], primo: ['Primo-acheteurs', '1 commande', '#F2C94C'], fidele: ['Fidèles', '2 à 3 commandes', '#C9B5F2'], vip: ['VIP', '4+ commandes ou 150 €+', '#A72D70'], inactif: ['Inactifs', 'Aucun achat depuis 90 jours', '#F28BA0'] };
   const EV = { account_created: 'Compte créé', newsletter_signup: 'Inscription newsletter', order_placed: 'Commande passée', quiz_completed: 'Quiz terminé', checkout_abandoned: 'Panier abandonné', add_to_cart: 'Ajout au panier', order_status: 'Statut de commande modifié', consent_withdrawn: 'Consentement retiré', consent_given: 'Consentement donné', second_order: 'Deuxième commande' };
   const bgFor = () => '#f9d3e4';
+  const STAGE = { nouveau: ['Nouveau contact', 'Inscrit·e, pas encore d’intérêt marqué', '#9aa3b5'], interesse: ['Intéressé·e', 'Quiz fait, message ou échange en cours', '#C9B5F2'], panier: ['Panier en cours', 'A ajouté au panier sans commander', '#F2C94C'], client: ['Client·e', 'Au moins une commande', '#F5A9CB'], fidele: ['Fidèle', 'Achats répétés, à chouchouter', '#A72D70'] };
+  const MSG = { nouveau: 'Nouveau', en_cours: 'En cours', traite: 'Traité' };
+  Object.assign(EV, { stage_changed: 'Étape du pipeline modifiée', contact_message: 'Message via le formulaire de contact' });
 
-  const state = { page: 'dashboard', days: 30, clientQ: '', clientSeg: 'all', orderQ: '', orderStatus: 'all', logFilter: 'all', seg: 'vip' };
+  const state = { page: 'dashboard', days: 30, clientQ: '', clientSeg: 'all', orderQ: '', orderStatus: 'all', logFilter: 'all', seg: 'vip', pipeQ: '', msgFilter: 'all' };
 
   function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
   function download(name, content, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
@@ -82,8 +85,14 @@
     const recent = DB.orders().slice().sort((a, b) => b.createdAt - a.createdAt).slice(0, 6);
     const low = DB.products(true).flatMap((p) => p.variants.filter((v) => v.stock <= 15).map((v) => `${p.name} (${v.label}) : <b>${v.stock}</b>`));
     const toShip = DB.orders().filter((o) => o.status === 'payee' || o.status === 'en_preparation').length;
+    const contacts = DB.customers().filter((c) => !c.deleted);
+    const buyers = contacts.filter((c) => DB.clientStats(c).count > 0).length;
+    const newMsg = DB.messages().filter((m) => m.status === 'nouveau').length;
+    const stages = DB.STAGES.map((k) => ({ label: STAGE[k][0], v: contacts.filter((c) => DB.stageOf(c) === k).length, color: STAGE[k][2] }));
     return `
-      <div class="grid g-kpi">${kpi('Chiffre d’affaires', eur0(cur.revenue), cur.revenue, prev.revenue)}${kpi('Commandes', num(cur.orders), cur.orders, prev.orders)}${kpi('Panier moyen', eur(cur.aov), cur.aov, prev.aov)}${kpi('Nouveaux clients', num(cur.newCustomers), cur.newCustomers, prev.newCustomers)}${kpi('Conversion', pct(cur.conversion), cur.conversion, prev.conversion)}</div>
+      <div class="grid g-kpi">${kpi('Chiffre d’affaires', eur0(cur.revenue), cur.revenue, prev.revenue)}${kpi('Commandes', num(cur.orders), cur.orders, prev.orders)}${kpi('Panier moyen', eur(cur.aov), cur.aov, prev.aov)}<div class="card kpi"><div class="label">Clients</div><div class="value">${num(buyers)}</div><span class="muted" style="font-size:.78rem">sur ${num(contacts.length)} contacts · ${pct(buyers / Math.max(1, contacts.length) * 100)} convertis</span></div>${kpi('Nouveaux contacts', num(cur.newCustomers), cur.newCustomers, prev.newCustomers)}${kpi('Taux de conversion', pct(cur.conversion), cur.conversion, prev.conversion)}</div>
+      <p class="muted" style="font-size:.8rem;margin:8px 2px 0">Taux de conversion = commandes ÷ visites sur la période. Clients = contacts ayant passé au moins une commande.</p>
+      <div class="card" style="margin-top:18px"><div class="top" style="margin-bottom:10px"><h2 style="margin:0">Pipeline commercial</h2><a href="#/pipeline" class="btn ghost sm">Ouvrir le pipeline</a></div>${bars(stages, num)}</div>
       <div class="grid g-2" style="margin-top:18px">
         <div class="card chart"><div class="top" style="margin-bottom:6px"><h2 style="margin:0">Chiffre d'affaires</h2><span class="muted">${state.days > 60 ? 'par semaine' : 'par jour'} · ${num(cur.visits)} visites</span></div>${areaChart(series(r.from, r.to), eur0)}</div>
         <div class="card"><h2>Clients par segment</h2>${donut(segs)}<p style="margin:14px 0 0"><a href="#/segments">Voir les segments →</a></p></div>
@@ -94,7 +103,7 @@
           ${recent.map((o) => `<tr class="click" data-order="${o.id}"><td><b>${o.number}</b></td><td>${esc(name(DB.customer(o.customerId)))}</td><td>${dt(o.createdAt)}</td><td><span class="pill s-${o.status}">${STATUS[o.status]}</span></td><td class="num">${eur(o.total)}</td></tr>`).join('')}</tbody></table></div></div>
         <div class="grid" style="align-content:start">
           <div class="card"><h2>Top produits</h2>${bars(sp.map((x) => ({ label: x.p.name, v: Math.round(x.ca) })), eur0)}</div>
-          <div class="card"><h2>À traiter</h2><p class="alert">📦 ${toShip} commande${toShip > 1 ? 's' : ''} à préparer ou expédier</p>${low.length ? `<p class="alert" style="margin-top:8px;background:#ffe0e5;color:#8d1534">⚠️ Stock faible<br>${low.join('<br>')}</p>` : ''}${DB.raw.reviews.some((x) => x.status === 'en_attente') ? `<p class="alert" style="margin-top:8px;background:#e8e0ff;color:#5333a8">💬 Avis en attente de modération · <a href="#/produits">modérer</a></p>` : ''}</div>
+          <div class="card"><h2>À traiter</h2>${newMsg ? `<p class="alert" style="margin-bottom:8px;background:#e6f4ff;color:#1d5b8f">✉️ ${newMsg} nouveau${newMsg > 1 ? 'x' : ''} message${newMsg > 1 ? 's' : ''} · <a href="#/messages">répondre</a></p>` : ''}<p class="alert">📦 ${toShip} commande${toShip > 1 ? 's' : ''} à préparer ou expédier</p>${low.length ? `<p class="alert" style="margin-top:8px;background:#ffe0e5;color:#8d1534">⚠️ Stock faible<br>${low.join('<br>')}</p>` : ''}${DB.raw.reviews.some((x) => x.status === 'en_attente') ? `<p class="alert" style="margin-top:8px;background:#e8e0ff;color:#5333a8">💬 Avis en attente de modération · <a href="#/produits">modérer</a></p>` : ''}</div>
         </div>
       </div>`;
   };
@@ -108,8 +117,8 @@
     return `<div class="card"><div class="filters"><label class="sr-only" for="cq">Rechercher</label><input type="search" id="cq" placeholder="Nom, email, ville…" value="${esc(state.clientQ)}">
       <select id="cseg" aria-label="Segment"><option value="all">Tous les segments</option>${Object.keys(SEG).map((k) => `<option value="${k}" ${state.clientSeg === k ? 'selected' : ''}>${SEG[k][0]}</option>`).join('')}</select>
       <span class="muted">${list.length} client${list.length > 1 ? 's' : ''}</span><span style="flex:1"></span><button class="btn ghost sm" id="cExport">Exporter CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Client</th><th>Ville</th><th>Segment</th><th class="num">Cmd</th><th class="num">CA</th><th class="num">Points</th><th>Consent.</th><th>Inscrit</th></tr></thead><tbody>
-      ${list.map(({ c, s, seg }) => `<tr class="click" data-client="${c.id}"><td><b>${esc(name(c))}</b><br><span class="muted" style="font-size:.82rem">${esc(c.email)}</span></td><td>${esc(c.city)}</td><td><span class="pill seg-${seg}">${SEG[seg][0]}</span></td><td class="num">${s.count}</td><td class="num">${eur(s.spent)}</td><td class="num">${num(c.points)}</td><td title="Newsletter / Quiz">${c.consent.newsletter ? '📧' : '<span class="muted">—</span>'} ${c.consent.quiz ? '🧪' : ''}</td><td>${d(c.createdAt)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Aucun client</td></tr>'}
+      <div class="table-wrap"><table><thead><tr><th>Contact</th><th>Ville</th><th>Étape</th><th>Segment</th><th class="num">Cmd</th><th class="num">CA</th><th class="num">Points</th><th>Consent.</th><th>Inscrit</th></tr></thead><tbody>
+      ${list.map(({ c, s, seg }) => `<tr class="click" data-client="${c.id}"><td><b>${esc(name(c))}</b><br><span class="muted" style="font-size:.82rem">${esc(c.email)}</span></td><td>${esc(c.city)}</td><td><span class="pill" style="background:${STAGE[DB.stageOf(c)][2]}33;color:var(--ink)">${STAGE[DB.stageOf(c)][0]}</span></td><td><span class="pill seg-${seg}">${SEG[seg][0]}</span></td><td class="num">${s.count}</td><td class="num">${eur(s.spent)}</td><td class="num">${num(c.points)}</td><td title="Newsletter / Quiz">${c.consent.newsletter ? '📧' : '<span class="muted">—</span>'} ${c.consent.quiz ? '🧪' : ''}</td><td>${d(c.createdAt)}</td></tr>`).join('') || '<tr><td colspan="9" class="empty">Aucun contact</td></tr>'}
       </tbody></table></div></div>`;
   };
   function clientSheet(id) {
@@ -120,6 +129,7 @@
     const logs = DB.raw.logs.filter((l) => l.customerId === id).sort((a, b) => b.at - a.at).slice(0, 8);
     sheet(`<div class="head"><div><h1 style="margin:0">${esc(name(c))}</h1><span class="pill seg-${seg}">${SEG[seg][0]}</span> <span class="pill" style="background:var(--petal);color:var(--berry)">Glow Club · ${t.label}</span></div><button class="x" data-close aria-label="Fermer">×</button></div>
       <div class="grid g-3" style="margin-bottom:14px"><div class="card kpi"><div class="label">Commandes</div><div class="value">${s.count}</div></div><div class="card kpi"><div class="label">Total dépensé</div><div class="value">${eur0(s.spent)}</div></div><div class="card kpi"><div class="label">Points</div><div class="value">${num(c.points)}</div></div></div>
+      <div class="card"><h3>Étape du pipeline</h3><div class="filters" style="margin:0"><label class="sr-only" for="stageSel">Étape</label><select id="stageSel">${DB.STAGES.map((k) => `<option value="${k}" ${DB.stageOf(c) === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select><span class="muted" style="font-size:.82rem">${c.stage ? 'Modifiée par l’équipe' : 'Proposée automatiquement d’après le parcours'}</span></div></div>
       <div class="card"><h3>Coordonnées</h3><dl class="kv"><dt>Email</dt><dd>${esc(c.email)}</dd><dt>Téléphone</dt><dd>${esc(c.phone) || '—'}</dd><dt>Adresse</dt><dd>${c.addresses[0] ? esc(c.addresses[0].line + ', ' + c.addresses[0].zip + ' ' + c.addresses[0].city) : '—'}</dd><dt>Inscription</dt><dd>${d(c.createdAt)}</dd><dt>Compte</dt><dd>${c.pwd ? 'Compte actif' : 'Sans mot de passe (invitée / prospect)'}</dd></dl></div>
       <div class="card"><h3>Consentements</h3><dl class="kv"><dt>Newsletter</dt><dd>${c.consent.newsletter ? '✅ Accepté' : '❌ Non'}</dd><dt>Données quiz</dt><dd>${c.consent.quiz ? '✅ Accepté' : '❌ Non'}</dd><dt>Mis à jour</dt><dd>${d(c.consent.date)}</dd></dl><p class="muted" style="font-size:.8rem;margin:8px 0 0">Les consentements ne sont modifiables que par la cliente (depuis son compte).</p></div>
       <div class="card"><h3>Fidélité</h3><div class="f2"><div class="field"><label for="ptsAdj">Ajuster les points</label><input id="ptsAdj" type="number" step="10" value="0"></div><div class="field" style="align-self:end"><button class="btn sm" id="ptsBtn">Appliquer</button></div></div></div>
@@ -129,6 +139,7 @@
       <div class="card"><h3>Emails automatiques</h3>${logs.length ? `<ul class="timeline">${logs.map((l) => `<li><span class="pill l-${l.status}">${l.status}</span> ${esc((DB.raw.automations.find((a) => a.id === l.automationId) || {}).name)} · ${dt(l.at)}${l.opened ? ' · ouvert' : ''}${l.clicked ? ' · cliqué' : ''}</li>`).join('')}</ul>` : '<p class="muted">Aucun email.</p>'}</div>
       <div class="card"><h3>Parcours client</h3><ul class="timeline">${evs.map((e) => `<li><b>${EV[e.type] || e.type}</b> <span class="muted">· ${dt(e.at)}</span></li>`).join('')}</ul></div>
       <div class="card"><h3>RGPD</h3><p class="muted" style="font-size:.88rem">Export complet des données ou anonymisation sur demande de la cliente.</p><button class="btn ghost sm" id="cExp">Exporter (JSON)</button> <button class="btn danger sm" id="cDel">Anonymiser</button></div>`);
+    $('#stageSel').onchange = (e) => { DB.setStage(id, e.target.value); toast('Étape : ' + STAGE[e.target.value][0]); clientSheet(id); };
     $('#ptsBtn').onclick = () => { const v = parseInt($('#ptsAdj').value, 10) || 0; DB.updateCustomer(id, { points: Math.max(0, c.points + v) }); toast('Points mis à jour'); clientSheet(id); };
     $('#noteBtn').onclick = () => { DB.updateCustomer(id, { notes: $('#note').value }); toast('Note enregistrée'); };
     $('#cExp').onclick = () => download(`client-${id}.json`, JSON.stringify(DB.exportCustomer(id), null, 2), 'application/json');
@@ -231,6 +242,29 @@
       ${sel.map(({ c, s }) => `<tr class="click" data-client="${c.id}"><td><b>${esc(name(c))}</b> <span class="muted">· ${esc(c.email)}</span></td><td class="num">${s.count}</td><td class="num">${eur(s.spent)}</td><td>${s.last ? d(s.last) : '—'}</td><td>${c.consent.newsletter ? '✅' : '—'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">Aucun client dans ce segment</td></tr>'}</tbody></table></div></div>`;
   };
 
+  /* ---------- pipeline ---------- */
+  pages.pipeline = () => {
+    const q = state.pipeQ.toLowerCase();
+    const all = DB.customers().filter((c) => !c.deleted).map((c) => ({ c, st: DB.stageOf(c), s: DB.clientStats(c) }));
+    const list = all.filter((x) => !q || (name(x.c) + ' ' + x.c.email + ' ' + x.c.city).toLowerCase().includes(q));
+    const card = ({ c, st, s }) => `<article class="deal" draggable="true" data-pipe="${c.id}" data-client="${c.id}" tabindex="0" aria-label="${esc(name(c))}">
+      <b>${esc(name(c))}</b><span class="muted">${esc(c.email)}</span>
+      <div class="deal-meta"><span>${s.count} cmd · ${eur0(s.spent)}</span>${c.stage ? '<span class="pill" style="background:var(--petal);color:var(--berry)">déplacé</span>' : ''}</div>
+      <label class="sr-only" for="st-${c.id}">Étape de ${esc(name(c))}</label><select id="st-${c.id}" class="no-open" data-stage-sel="${c.id}">${DB.STAGES.map((k) => `<option value="${k}" ${st === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select></article>`;
+    return `<div class="card" style="margin-bottom:18px"><div class="filters" style="margin:0"><label class="sr-only" for="pq">Rechercher</label><input type="search" id="pq" placeholder="Nom, email, ville…" value="${esc(state.pipeQ)}"><span class="muted" style="font-size:.86rem">Glisse une carte vers une autre colonne (ou change l’étape dans la liste) : la modification est enregistrée et visible dans la fiche du contact.</span></div></div>
+      <div class="kanban">${DB.STAGES.map((k) => { const col = list.filter((x) => x.st === k).sort((a, b) => b.s.spent - a.s.spent); const ca = col.reduce((t, x) => t + x.s.spent, 0);
+        return `<section class="kcol" data-stage="${k}" aria-label="${STAGE[k][0]}"><header style="border-top-color:${STAGE[k][2]}"><div><b>${STAGE[k][0]}</b> <span class="n">${col.length}</span></div><span class="muted">${STAGE[k][1]}<br>${eur0(ca)} de CA cumulé</span></header>
+          <div class="kcards">${col.slice(0, 60).map(card).join('') || '<p class="muted empty">Aucun contact</p>'}${col.length > 60 ? `<p class="muted" style="font-size:.8rem;text-align:center">+ ${col.length - 60} autres · utilise la recherche</p>` : ''}</div></section>`; }).join('')}</div>`;
+  };
+
+  /* ---------- messages (formulaire de contact) ---------- */
+  pages.messages = () => {
+    const list = DB.messages().filter((m) => state.msgFilter === 'all' || m.status === state.msgFilter);
+    return `<div class="card"><div class="filters"><select id="mF" aria-label="Filtrer"><option value="all">Tous les messages</option>${Object.keys(MSG).map((k) => `<option value="${k}" ${state.msgFilter === k ? 'selected' : ''}>${MSG[k]}</option>`).join('')}</select><span class="muted">${list.length} message${list.length > 1 ? 's' : ''} · reçus via la page Contact du site</span></div>
+      ${list.map((m) => `<div class="msg"><div class="msg-head"><div><b>${esc(m.subject)}</b> · <a href="#" data-client="${m.customerId}">${esc(m.name || m.email)}</a> <span class="muted">· ${esc(m.email)} · ${dt(m.at)}</span>${m.orderNumber ? ` <span class="pill" style="background:#ecebff;color:#635bff">Cmd ${esc(m.orderNumber)}</span>` : ''}</div><span class="pill msg-${m.status}">${MSG[m.status]}</span></div>
+        <p>${esc(m.message)}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${Object.keys(MSG).filter((k) => k !== m.status).map((k) => `<button class="btn ${k === 'traite' ? '' : 'ghost'} sm" data-msg="${m.id}" data-to="${k}">${k === 'traite' ? '✓ Marquer traité' : k === 'en_cours' ? 'En cours' : 'Remettre en nouveau'}</button>`).join('')}</div></div>`).join('') || '<p class="empty muted">Aucun message</p>'}</div>`;
+  };
+
   /* ---------- automatisations ---------- */
   function autoMetrics(a, from) {
     const l = DB.raw.logs.filter((x) => x.automationId === a.id && (!from || x.at >= from));
@@ -271,8 +305,8 @@
   };
 
   /* ================= SHELL ================= */
-  const NAV = [['dashboard', '📊', 'Dashboard'], ['clients', '💗', 'Clients'], ['commandes', '📦', 'Commandes'], ['produits', '🧴', 'Produits'], ['segments', '🎯', 'Segments'], ['automatisations', '⚡', 'Automatisations'], ['reporting', '📈', 'Reporting']];
-  const TITLES = { dashboard: 'Dashboard', clients: 'Clients', commandes: 'Commandes', produits: 'Produits', segments: 'Segments', automatisations: 'Automatisations', reporting: 'Reporting' };
+  const NAV = [['dashboard', '📊', 'Dashboard'], ['clients', '💗', 'Contacts'], ['pipeline', '🧭', 'Pipeline'], ['messages', '✉️', 'Messages'], ['commandes', '📦', 'Commandes'], ['produits', '🧴', 'Produits'], ['segments', '🎯', 'Segments'], ['automatisations', '⚡', 'Automatisations'], ['reporting', '📈', 'Reporting']];
+  const TITLES = { dashboard: 'Dashboard', clients: 'Contacts', pipeline: 'Pipeline commercial', messages: 'Messages', commandes: 'Commandes', produits: 'Produits', segments: 'Segments', automatisations: 'Automatisations', reporting: 'Reporting' };
 
   function gate() {
     $('#root').innerHTML = `<div class="gate"><form id="gateForm"><div class="logo">glowmie.</div><p class="muted" style="margin-top:0;font-weight:800;letter-spacing:.1em;font-size:.75rem">CRM · ESPACE ADMINISTRATEUR</p>
@@ -286,7 +320,7 @@
     if (!DB.isAdmin()) return gate();
     const h = location.hash.replace(/^#\/?/, '').split('/')[0];
     state.page = TITLES[h] ? h : 'dashboard';
-    const badge = { commandes: DB.orders().filter((o) => o.status === 'payee').length, produits: DB.raw.reviews.filter((r) => r.status === 'en_attente').length };
+    const badge = { messages: DB.messages().filter((m) => m.status === 'nouveau').length, commandes: DB.orders().filter((o) => o.status === 'payee').length, produits: DB.raw.reviews.filter((r) => r.status === 'en_attente').length };
     const scrollY = window.scrollY;
     const showPeriod = ['dashboard', 'reporting'].includes(state.page);
     $('#root').innerHTML = `<div class="mobile-top"><button id="menuBtn" aria-label="Menu">☰</button><b>glowmie. CRM</b><span></span></div>
@@ -310,6 +344,8 @@
     on('#oq', 'input', (e) => { state.orderQ = e.target.value; rerenderPage('#oq'); });
     on('#ost', 'change', (e) => { state.orderStatus = e.target.value; render(); });
     on('#logF', 'change', (e) => { state.logFilter = e.target.value; render(); });
+    on('#pq', 'input', (e) => { state.pipeQ = e.target.value; rerenderPage('#pq'); });
+    on('#mF', 'change', (e) => { state.msgFilter = e.target.value; render(); });
     on('#newProd', 'click', () => productSheet(null));
     on('#runNow', 'click', () => { const n = DB.runScheduled(0); toast(n + ' email(s) envoyé(s)'); });
     on('#run7', 'click', () => { const n = DB.runScheduled(7); toast(n + ' email(s) envoyé(s) (simulation +7 j)'); });
@@ -342,8 +378,9 @@
   /* délégation des clics */
   document.addEventListener('click', (e) => {
     const cl = e.target.closest('[data-client]'); const or = e.target.closest('[data-order]'); const pr = e.target.closest('[data-prod]');
-    const sg = e.target.closest('[data-seg]'); const rv = e.target.closest('[data-rev]');
-    if (e.target.closest('.switch')) return;
+    const sg = e.target.closest('[data-seg]'); const rv = e.target.closest('[data-rev]'); const ms = e.target.closest('[data-msg]');
+    if (e.target.closest('.switch, .no-open')) return;
+    if (ms) { DB.setMessageStatus(ms.dataset.msg, ms.dataset.to); toast('Message : ' + MSG[ms.dataset.to]); render(); return; }
     if (or) { e.preventDefault(); orderSheet(or.dataset.order); return; }
     if (cl && cl.dataset.client) { e.preventDefault(); clientSheet(cl.dataset.client); return; }
     if (pr) { productSheet(pr.dataset.prod); return; }
@@ -352,14 +389,22 @@
     if (!e.target.closest('#side, #menuBtn')) { const s = $('#side'); if (s) s.classList.remove('open'); }
   });
   document.addEventListener('change', (e) => {
-    const a = e.target.closest('[data-auto]'); const p = e.target.closest('[data-active]');
+    const a = e.target.closest('[data-auto]'); const p = e.target.closest('[data-active]'); const ss = e.target.closest('[data-stage-sel]');
+    if (ss) { DB.setStage(ss.dataset.stageSel, ss.value); toast(name(DB.customer(ss.dataset.stageSel)) + ' → ' + STAGE[ss.value][0]); render(); return; }
     if (a) { const au = DB.raw.automations.find((x) => x.id === a.dataset.auto); au.active = a.checked; DB.save(); toast(au.name + (a.checked ? ' activé' : ' désactivé')); }
     if (p) { const pr = DB.product(p.dataset.active); pr.active = p.checked; DB.saveProduct(pr); toast(pr.name + (p.checked ? ' en ligne' : ' hors ligne')); }
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeSheet();
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-seg]')) { e.preventDefault(); e.target.click(); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-seg], [data-pipe]')) { e.preventDefault(); e.target.click(); }
   });
+  /* glisser-déposer du pipeline */
+  let dragId = null;
+  document.addEventListener('dragstart', (e) => { const c = e.target.closest && e.target.closest('[data-pipe]'); if (!c) return; dragId = c.dataset.pipe; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch (err) {} });
+  document.addEventListener('dragend', () => { dragId = null; $$('.dragging, .kcol.over').forEach((el) => el.classList.remove('dragging', 'over')); });
+  document.addEventListener('dragover', (e) => { const col = dragId && e.target.closest && e.target.closest('.kcol'); if (!col) return; e.preventDefault(); $$('.kcol.over').forEach((el) => el !== col && el.classList.remove('over')); col.classList.add('over'); });
+  document.addEventListener('drop', (e) => { const col = dragId && e.target.closest && e.target.closest('.kcol'); if (!col) return; e.preventDefault(); const id = dragId; dragId = null; DB.setStage(id, col.dataset.stage); toast(name(DB.customer(id)) + ' → ' + STAGE[col.dataset.stage][0]); render(); });
+
   /* infobulles des graphiques */
   const tip = $('#tip');
   document.addEventListener('mousemove', (e) => {
