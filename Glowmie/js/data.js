@@ -468,5 +468,19 @@ window.GLOW_SEED = (function () {
     headband: { id: "1609357912334-e96886c0212b", alt: "Jeune femme avec un bandeau, peau fraîche" }
   };
 
-  return { version: 16, photos, products, categories, articles, promos, automations, customers, orders, events, logs, quizResults, visits, reviews };
+  // messages reçus via le formulaire de contact
+  const messages = [
+    [5, 'Question produit', 'Hello ! Est-ce que Glow Drops convient aux peaux mixtes à grasses ? Merci 💗', 0.2, 'nouveau'],
+    [12, 'Ma commande', 'Coucou, ma commande est marquée expédiée mais je n’ai pas reçu le numéro de suivi.', 0.8, 'nouveau'],
+    [27, 'Glow Club', 'Comment j’utilise mes points sur ma prochaine commande ?', 2, 'en_cours'],
+    [40, 'Partenariat', 'Je suis créatrice de contenu skincare (12k abonnés), j’aimerais tester la gamme.', 4, 'traite'],
+    [63, 'Question produit', 'Sun Sunny laisse-t-il des traces blanches sur peau foncée ?', 6, 'traite'],
+    [88, 'Autre', 'Vous prévoyez des recharges pour Daily Cloud ?', 9, 'traite']
+  ].map(([ci, subject, message, days, status], i) => {
+    const c = customers[ci], at = Math.round(now - days * DAY);
+    events.push({ id: 'e' + events.length, type: 'contact_message', customerId: c.id, at, data: { messageId: 'm' + (i + 1) } });
+    return { id: 'm' + (i + 1), customerId: c.id, name: c.firstName + ' ' + c.lastName, email: c.email, subject, orderNumber: '', message, at, status };
+  });
+
+  return { version: 16, photos, products, categories, articles, promos, automations, customers, orders, events, logs, quizResults, visits, reviews, messages };
 })();
