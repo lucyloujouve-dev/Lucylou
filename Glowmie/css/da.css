@@ -334,3 +334,27 @@ main.is-home { padding-top: 0; animation: none; }
 .contact-side { display: grid; gap: 16px; }
 .confirm-panel { text-align: center; padding: 40px 24px; }
 .confirm-panel .big-heart { font-size: 4rem; display: inline-block; }
+
+/* offre détaillée */
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: start; padding: 10px 0 20px; }
+.plan { position: relative; background: #fff; border-radius: 28px; padding: 28px 26px; box-shadow: 0 20px 40px -30px rgba(61, 20, 48, .45); border: 1px solid rgba(61, 20, 48, .08); }
+.plan.hot { background: var(--plum, #3D1430); color: #FFF4EF; }
+.plan.hot .eyebrow, .plan.hot h2, .plan.hot h4 { color: #FFF4EF; }
+.plan h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); text-transform: uppercase; letter-spacing: -.03em; margin: 4px 0 6px; color: var(--plum, #3D1430); }
+.plan-badge { position: absolute; top: -12px; right: 20px; background: var(--butter, #F9E49A); color: #3D1430; font-weight: 800; font-size: .75rem; padding: 5px 12px; border-radius: 99px; }
+.plan-price { font-size: 2rem; font-weight: 800; margin: 0; }
+.plan-price small { font-size: .9rem; font-weight: 700; opacity: .7; }
+.plan-price s { font-size: 1rem; opacity: .55; margin-left: 6px; }
+.plan-for { margin: 6px 0 14px; opacity: .85; }
+.plan h4 { margin: 14px 0 6px; font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; }
+.plan ul, .offer-box ul { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 6px; font-size: .92rem; }
+ul.yes li::before { content: '✓'; font-weight: 900; color: #23824f; margin-right: 8px; }
+ul.no li::before { content: '✕'; font-weight: 900; color: #c0264f; margin-right: 8px; }
+.plan.hot ul.yes li::before { color: #9be0b4; } .plan.hot ul.no li::before { color: #ffb3c5; }
+.plan .btn { margin-top: 18px; }
+.plans-note { font-size: .88rem; margin: 6px 0 70px; }
+.offer-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; background: rgba(255, 255, 255, .7); border-radius: 20px; padding: 16px 18px; margin: 18px 0; }
+.offer-box h4 { margin: 0 0 6px; font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; }
+.offer-box p { grid-column: 1 / -1; margin: 4px 0 0; font-size: .82rem; }
+.ttc { font-size: .45em; font-weight: 700; opacity: .6; }
+@media (max-width: 900px) { .plans { grid-template-columns: 1fr; } .offer-box { grid-template-columns: 1fr; } }
