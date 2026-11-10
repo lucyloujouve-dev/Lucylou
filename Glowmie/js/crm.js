@@ -14,11 +14,15 @@
   const SEG = { prospect: ['Prospects', 'Inscrits sans commande', '#9aa3b5'], primo: ['Primo-acheteurs', '1 commande', '#F2C94C'], fidele: ['Fidèles', '2 à 3 commandes', '#C9B5F2'], vip: ['VIP', '4+ commandes ou 150 €+', '#A72D70'], inactif: ['Inactifs', 'Aucun achat depuis 90 jours', '#F28BA0'] };
   const EV = { account_created: 'Compte créé', newsletter_signup: 'Inscription newsletter', order_placed: 'Commande passée', quiz_completed: 'Quiz terminé', checkout_abandoned: 'Panier abandonné', add_to_cart: 'Ajout au panier', order_status: 'Statut de commande modifié', consent_withdrawn: 'Consentement retiré', consent_given: 'Consentement donné', second_order: 'Deuxième commande' };
   const bgFor = () => '#f9d3e4';
-  const STAGE = { nouveau: ['Nouveau contact', 'Inscrit·e, pas encore d’intérêt marqué', '#9aa3b5'], interesse: ['Intéressé·e', 'Quiz fait, message ou échange en cours', '#C9B5F2'], panier: ['Panier en cours', 'A ajouté au panier sans commander', '#F2C94C'], client: ['Client·e', 'Au moins une commande', '#F5A9CB'], fidele: ['Fidèle', 'Achats répétés, à chouchouter', '#A72D70'] };
+  const STAGE = { nouveau: ['Nouveau', 'Inscrit·e, pas encore contacté·e', '#9aa3b5'], contacte: ['Contacté', 'Premier échange fait (DM, email, quiz, message)', '#C9B5F2'], proposition: ['Proposition envoyée', 'Offre ou code promo envoyé, panier en cours', '#F2C94C'], gagne: ['Gagné', 'A passé au moins une commande', '#3fae6b'], perdu: ['Perdu', 'Sans suite depuis plus de 90 jours', '#F28BA0'] };
+  const SRC = { instagram: 'Réseau social · Instagram', tiktok: 'Réseau social · TikTok', partenaire: 'Partenaire (créatrice de contenu)', salon: 'Salon · Beauty Days Paris', site: 'Site web', formulaire: 'Formulaire de contact', bouche: 'Bouche-à-oreille' };
+  const XT = { email: '✉️ Email', appel: '📞 Appel', dm: '💬 Message privé', salon: '🎪 Salon', note: '📝 Note', formulaire: '🌐 Formulaire du site' };
+  const due = (a) => { if (!a || !a.due) return ''; const days = Math.round((a.due - Date.now()) / DAY); return days < 0 ? `<span style="color:var(--bad);font-weight:800">en retard (${d(a.due)})</span>` : days === 0 ? '<b>aujourd’hui</b>' : `le ${d(a.due)}`; };
+  const NEXT_STAGE = { nouveau: 'contacte', contacte: 'proposition', proposition: 'gagne' };
   const MSG = { nouveau: 'Nouveau', en_cours: 'En cours', traite: 'Traité' };
   Object.assign(EV, { stage_changed: 'Étape du pipeline modifiée', contact_message: 'Message via le formulaire de contact' });
 
-  const state = { page: 'dashboard', days: 30, clientQ: '', clientSeg: 'all', orderQ: '', orderStatus: 'all', logFilter: 'all', seg: 'vip', pipeQ: '', msgFilter: 'all' };
+  const state = { page: 'dashboard', days: 30, clientQ: '', clientSeg: 'all', orderQ: '', orderStatus: 'all', logFilter: 'all', seg: 'vip', pipeQ: '', msgFilter: 'all', clientSrc: 'all', clientStage: 'all' };
 
   function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
   function download(name, content, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
@@ -88,6 +92,7 @@
     const contacts = DB.customers().filter((c) => !c.deleted);
     const buyers = contacts.filter((c) => DB.clientStats(c).count > 0).length;
     const newMsg = DB.messages().filter((m) => m.status === 'nouveau').length;
+    const lateActions = contacts.filter((c) => c.nextAction && c.nextAction.due && c.nextAction.due < Date.now() + DAY).length;
     const stages = DB.STAGES.map((k) => ({ label: STAGE[k][0], v: contacts.filter((c) => DB.stageOf(c) === k).length, color: STAGE[k][2] }));
     return `
       <div class="grid g-kpi">${kpi('Chiffre d’affaires', eur0(cur.revenue), cur.revenue, prev.revenue)}${kpi('Commandes', num(cur.orders), cur.orders, prev.orders)}${kpi('Panier moyen', eur(cur.aov), cur.aov, prev.aov)}<div class="card kpi"><div class="label">Clients</div><div class="value">${num(buyers)}</div><span class="muted" style="font-size:.78rem">sur ${num(contacts.length)} contacts · ${pct(buyers / Math.max(1, contacts.length) * 100)} convertis</span></div>${kpi('Nouveaux contacts', num(cur.newCustomers), cur.newCustomers, prev.newCustomers)}${kpi('Taux de conversion', pct(cur.conversion), cur.conversion, prev.conversion)}</div>
@@ -103,7 +108,7 @@
           ${recent.map((o) => `<tr class="click" data-order="${o.id}"><td><b>${o.number}</b></td><td>${esc(name(DB.customer(o.customerId)))}</td><td>${dt(o.createdAt)}</td><td><span class="pill s-${o.status}">${STATUS[o.status]}</span></td><td class="num">${eur(o.total)}</td></tr>`).join('')}</tbody></table></div></div>
         <div class="grid" style="align-content:start">
           <div class="card"><h2>Top produits</h2>${bars(sp.map((x) => ({ label: x.p.name, v: Math.round(x.ca) })), eur0)}</div>
-          <div class="card"><h2>À traiter</h2>${newMsg ? `<p class="alert" style="margin-bottom:8px;background:#e6f4ff;color:#1d5b8f">✉️ ${newMsg} nouveau${newMsg > 1 ? 'x' : ''} message${newMsg > 1 ? 's' : ''} · <a href="#/messages">répondre</a></p>` : ''}<p class="alert">📦 ${toShip} commande${toShip > 1 ? 's' : ''} à préparer ou expédier</p>${low.length ? `<p class="alert" style="margin-top:8px;background:#ffe0e5;color:#8d1534">⚠️ Stock faible<br>${low.join('<br>')}</p>` : ''}${DB.raw.reviews.some((x) => x.status === 'en_attente') ? `<p class="alert" style="margin-top:8px;background:#e8e0ff;color:#5333a8">💬 Avis en attente de modération · <a href="#/produits">modérer</a></p>` : ''}</div>
+          <div class="card"><h2>À traiter</h2>${newMsg ? `<p class="alert" style="margin-bottom:8px;background:#e6f4ff;color:#1d5b8f">✉️ ${newMsg} nouveau${newMsg > 1 ? 'x' : ''} message${newMsg > 1 ? 's' : ''} · <a href="#/messages">répondre</a></p>` : ''}${lateActions ? `<p class="alert" style="margin-bottom:8px;background:#efe8ff;color:#5333a8">⏰ ${lateActions} prochaine${lateActions > 1 ? 's' : ''} action${lateActions > 1 ? 's' : ''} pour aujourd’hui ou en retard · <a href="#/clients">voir les contacts</a></p>` : ''}<p class="alert">📦 ${toShip} commande${toShip > 1 ? 's' : ''} à préparer ou expédier</p>${low.length ? `<p class="alert" style="margin-top:8px;background:#ffe0e5;color:#8d1534">⚠️ Stock faible<br>${low.join('<br>')}</p>` : ''}${DB.raw.reviews.some((x) => x.status === 'en_attente') ? `<p class="alert" style="margin-top:8px;background:#e8e0ff;color:#5333a8">💬 Avis en attente de modération · <a href="#/produits">modérer</a></p>` : ''}</div>
         </div>
       </div>`;
   };
@@ -111,14 +116,16 @@
   /* ---------- clients ---------- */
   pages.clients = () => {
     const q = state.clientQ.toLowerCase();
-    const list = DB.customers().filter((c) => !c.deleted).map((c) => ({ c, s: DB.clientStats(c), seg: DB.segmentOf(c) }))
-      .filter((x) => (state.clientSeg === 'all' || x.seg === state.clientSeg) && (!q || (name(x.c) + ' ' + x.c.email + ' ' + x.c.city).toLowerCase().includes(q)))
+    const list = DB.customers().filter((c) => !c.deleted).map((c) => ({ c, s: DB.clientStats(c), seg: DB.segmentOf(c), st: DB.stageOf(c) }))
+      .filter((x) => (state.clientSeg === 'all' || x.seg === state.clientSeg) && (state.clientSrc === 'all' || DB.sourceOf(x.c) === state.clientSrc) && (state.clientStage === 'all' || x.st === state.clientStage) && (!q || (name(x.c) + ' ' + x.c.email + ' ' + x.c.city).toLowerCase().includes(q)))
       .sort((a, b) => b.c.createdAt - a.c.createdAt);
-    return `<div class="card"><div class="filters"><label class="sr-only" for="cq">Rechercher</label><input type="search" id="cq" placeholder="Nom, email, ville…" value="${esc(state.clientQ)}">
+    return `<div class="card"><div class="filters"><label class="sr-only" for="cq">Rechercher</label><input type="search" id="cq" placeholder="Rechercher : nom, email, ville…" value="${esc(state.clientQ)}">
+      <select id="cstage" aria-label="Étape"><option value="all">Toutes les étapes</option>${DB.STAGES.map((k) => `<option value="${k}" ${state.clientStage === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select>
+      <select id="csrc" aria-label="Source"><option value="all">Toutes les sources</option>${Object.keys(SRC).map((k) => `<option value="${k}" ${state.clientSrc === k ? 'selected' : ''}>${SRC[k]}</option>`).join('')}</select>
       <select id="cseg" aria-label="Segment"><option value="all">Tous les segments</option>${Object.keys(SEG).map((k) => `<option value="${k}" ${state.clientSeg === k ? 'selected' : ''}>${SEG[k][0]}</option>`).join('')}</select>
-      <span class="muted">${list.length} client${list.length > 1 ? 's' : ''}</span><span style="flex:1"></span><button class="btn ghost sm" id="cExport">Exporter CSV</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Contact</th><th>Ville</th><th>Étape</th><th>Segment</th><th class="num">Cmd</th><th class="num">CA</th><th class="num">Points</th><th>Consent.</th><th>Inscrit</th></tr></thead><tbody>
-      ${list.map(({ c, s, seg }) => `<tr class="click" data-client="${c.id}"><td><b>${esc(name(c))}</b><br><span class="muted" style="font-size:.82rem">${esc(c.email)}</span></td><td>${esc(c.city)}</td><td><span class="pill" style="background:${STAGE[DB.stageOf(c)][2]}33;color:var(--ink)">${STAGE[DB.stageOf(c)][0]}</span></td><td><span class="pill seg-${seg}">${SEG[seg][0]}</span></td><td class="num">${s.count}</td><td class="num">${eur(s.spent)}</td><td class="num">${num(c.points)}</td><td title="Newsletter / Quiz">${c.consent.newsletter ? '📧' : '<span class="muted">—</span>'} ${c.consent.quiz ? '🧪' : ''}</td><td>${d(c.createdAt)}</td></tr>`).join('') || '<tr><td colspan="9" class="empty">Aucun contact</td></tr>'}
+      <span class="muted">${list.length} contact${list.length > 1 ? 's' : ''}</span><span style="flex:1"></span><button class="btn ghost sm" id="cExport">Exporter CSV</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Contact</th><th>Source</th><th>Étape</th><th>Prochaine action</th><th class="num">Cmd</th><th class="num">CA</th><th>Consent.</th><th>Inscrit</th></tr></thead><tbody>
+      ${list.map(({ c, s, st }) => `<tr class="click" data-client="${c.id}"><td><b>${esc(name(c))}</b><br><span class="muted" style="font-size:.82rem">${esc(c.email)}</span></td><td style="font-size:.85rem">${SRC[DB.sourceOf(c)] || '—'}</td><td><span class="pill" style="background:${STAGE[st][2]}33;color:var(--ink)">${STAGE[st][0]}</span></td><td style="font-size:.85rem">${c.nextAction ? `${esc(c.nextAction.text)}<br><span class="muted">${due(c.nextAction)}</span>` : '<span class="muted">—</span>'}</td><td class="num">${s.count}</td><td class="num">${eur(s.spent)}</td><td title="Newsletter / Quiz">${c.consent.newsletter ? '📧' : '<span class="muted">—</span>'} ${c.consent.quiz ? '🧪' : ''}</td><td>${d(c.createdAt)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Aucun contact</td></tr>'}
       </tbody></table></div></div>`;
   };
   function clientSheet(id) {
@@ -129,7 +136,16 @@
     const logs = DB.raw.logs.filter((l) => l.customerId === id).sort((a, b) => b.at - a.at).slice(0, 8);
     sheet(`<div class="head"><div><h1 style="margin:0">${esc(name(c))}</h1><span class="pill seg-${seg}">${SEG[seg][0]}</span> <span class="pill" style="background:var(--petal);color:var(--berry)">Glow Club · ${t.label}</span></div><button class="x" data-close aria-label="Fermer">×</button></div>
       <div class="grid g-3" style="margin-bottom:14px"><div class="card kpi"><div class="label">Commandes</div><div class="value">${s.count}</div></div><div class="card kpi"><div class="label">Total dépensé</div><div class="value">${eur0(s.spent)}</div></div><div class="card kpi"><div class="label">Points</div><div class="value">${num(c.points)}</div></div></div>
-      <div class="card"><h3>Étape du pipeline</h3><div class="filters" style="margin:0"><label class="sr-only" for="stageSel">Étape</label><select id="stageSel">${DB.STAGES.map((k) => `<option value="${k}" ${DB.stageOf(c) === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select><span class="muted" style="font-size:.82rem">${c.stage ? 'Modifiée par l’équipe' : 'Proposée automatiquement d’après le parcours'}</span></div></div>
+      <div class="card"><h3>Pipeline & source</h3><div class="f2"><div class="field"><label for="stageSel">Étape du pipeline</label><select id="stageSel">${DB.STAGES.map((k) => `<option value="${k}" ${DB.stageOf(c) === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select></div>
+        <div class="field"><label for="srcSel">Source (comment le contact nous a connus)</label><select id="srcSel">${Object.keys(SRC).map((k) => `<option value="${k}" ${DB.sourceOf(c) === k ? 'selected' : ''}>${SRC[k]}</option>`).join('')}</select></div></div>
+        <p class="muted" style="font-size:.82rem;margin:0">${c.stage ? 'Étape modifiée par l’équipe.' : 'Étape proposée automatiquement d’après le parcours.'} Une commande passée sur la boutique fait passer le contact en « Gagné ».</p></div>
+      <div class="card next-card"><h3>Prochaine action</h3>${c.nextAction ? `<p style="margin:0 0 10px"><b>${esc(c.nextAction.text)}</b> · ${due(c.nextAction)}</p>` : '<p class="muted" style="margin:0 0 10px">Aucune action prévue.</p>'}
+        <div class="f2"><div class="field"><label for="naText">Action</label><input id="naText" type="text" value="${esc(c.nextAction ? c.nextAction.text : '')}" placeholder="Ex. relancer avec le code HELLOGLOW"></div><div class="field"><label for="naDue">Échéance</label><input id="naDue" type="date" value="${c.nextAction && c.nextAction.due ? new Date(c.nextAction.due).toISOString().slice(0, 10) : ''}"></div></div>
+        <button class="btn sm" id="naSave">Enregistrer l’action</button> ${c.nextAction ? '<button class="btn ghost sm" id="naDone">✓ Marquer comme faite</button>' : ''}</div>
+      <div class="card"><h3>Historique des échanges (${(c.exchanges || []).length})</h3>
+        <ul class="timeline">${(c.exchanges || []).slice().sort((a, b) => b.at - a.at).map((x) => `<li><b>${XT[x.type] || x.type}</b> <span class="muted">· ${dt(x.at)} · ${esc(x.by || '')}</span><br>${esc(x.text)}</li>`).join('') || '<li class="muted">Aucun échange pour l’instant.</li>'}</ul>
+        <div class="f2" style="margin-top:12px"><div class="field"><label for="xType">Type d’échange</label><select id="xType">${['email', 'appel', 'dm', 'salon', 'note'].map((k) => `<option value="${k}">${XT[k]}</option>`).join('')}</select></div><div class="field"><label for="xText">Résumé</label><input id="xText" type="text" placeholder="Ex. a demandé un conseil pour peau sensible"></div></div>
+        <button class="btn sm" id="xAdd">+ Ajouter l’échange</button></div>
       <div class="card"><h3>Coordonnées</h3><dl class="kv"><dt>Email</dt><dd>${esc(c.email)}</dd><dt>Téléphone</dt><dd>${esc(c.phone) || '—'}</dd><dt>Adresse</dt><dd>${c.addresses[0] ? esc(c.addresses[0].line + ', ' + c.addresses[0].zip + ' ' + c.addresses[0].city) : '—'}</dd><dt>Inscription</dt><dd>${d(c.createdAt)}</dd><dt>Compte</dt><dd>${c.pwd ? 'Compte actif' : 'Sans mot de passe (invitée / prospect)'}</dd></dl></div>
       <div class="card"><h3>Consentements</h3><dl class="kv"><dt>Newsletter</dt><dd>${c.consent.newsletter ? '✅ Accepté' : '❌ Non'}</dd><dt>Données quiz</dt><dd>${c.consent.quiz ? '✅ Accepté' : '❌ Non'}</dd><dt>Mis à jour</dt><dd>${d(c.consent.date)}</dd></dl><p class="muted" style="font-size:.8rem;margin:8px 0 0">Les consentements ne sont modifiables que par la cliente (depuis son compte).</p></div>
       <div class="card"><h3>Fidélité</h3><div class="f2"><div class="field"><label for="ptsAdj">Ajuster les points</label><input id="ptsAdj" type="number" step="10" value="0"></div><div class="field" style="align-self:end"><button class="btn sm" id="ptsBtn">Appliquer</button></div></div></div>
@@ -140,6 +156,10 @@
       <div class="card"><h3>Parcours client</h3><ul class="timeline">${evs.map((e) => `<li><b>${EV[e.type] || e.type}</b> <span class="muted">· ${dt(e.at)}</span></li>`).join('')}</ul></div>
       <div class="card"><h3>RGPD</h3><p class="muted" style="font-size:.88rem">Export complet des données ou anonymisation sur demande de la cliente.</p><button class="btn ghost sm" id="cExp">Exporter (JSON)</button> <button class="btn danger sm" id="cDel">Anonymiser</button></div>`);
     $('#stageSel').onchange = (e) => { DB.setStage(id, e.target.value); toast('Étape : ' + STAGE[e.target.value][0]); clientSheet(id); };
+    $('#srcSel').onchange = (e) => { DB.updateCustomer(id, { source: e.target.value }); toast('Source : ' + SRC[e.target.value]); };
+    $('#naSave').onclick = () => { const text = $('#naText').value.trim(); if (!text) return toast('Décris l’action à faire'); const v = $('#naDue').value; DB.setNextAction(id, { text, due: v ? new Date(v + 'T09:00').getTime() : null }); toast('Prochaine action enregistrée'); clientSheet(id); };
+    const nd = $('#naDone'); if (nd) nd.onclick = () => { DB.addExchange(id, { type: 'note', text: 'Action faite : ' + c.nextAction.text }); DB.setNextAction(id, null); toast('Action terminée ✓'); clientSheet(id); };
+    $('#xAdd').onclick = () => { const text = $('#xText').value.trim(); if (!text) return toast('Ajoute un résumé de l’échange'); DB.addExchange(id, { type: $('#xType').value, text }); if (DB.stageOf(c) === 'nouveau') DB.setStage(id, 'contacte'); toast('Échange ajouté'); clientSheet(id); };
     $('#ptsBtn').onclick = () => { const v = parseInt($('#ptsAdj').value, 10) || 0; DB.updateCustomer(id, { points: Math.max(0, c.points + v) }); toast('Points mis à jour'); clientSheet(id); };
     $('#noteBtn').onclick = () => { DB.updateCustomer(id, { notes: $('#note').value }); toast('Note enregistrée'); };
     $('#cExp').onclick = () => download(`client-${id}.json`, JSON.stringify(DB.exportCustomer(id), null, 2), 'application/json');
@@ -249,8 +269,10 @@
     const list = all.filter((x) => !q || (name(x.c) + ' ' + x.c.email + ' ' + x.c.city).toLowerCase().includes(q));
     const card = ({ c, st, s }) => `<article class="deal" draggable="true" data-pipe="${c.id}" data-client="${c.id}" tabindex="0" aria-label="${esc(name(c))}">
       <b>${esc(name(c))}</b><span class="muted">${esc(c.email)}</span>
+      <span class="deal-src">${SRC[DB.sourceOf(c)] || ''}</span>
       <div class="deal-meta"><span>${s.count} cmd · ${eur0(s.spent)}</span>${c.stage ? '<span class="pill" style="background:var(--petal);color:var(--berry)">déplacé</span>' : ''}</div>
-      <label class="sr-only" for="st-${c.id}">Étape de ${esc(name(c))}</label><select id="st-${c.id}" class="no-open" data-stage-sel="${c.id}">${DB.STAGES.map((k) => `<option value="${k}" ${st === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select></article>`;
+      ${c.nextAction ? `<span class="deal-next">➜ ${esc(c.nextAction.text)} · ${due(c.nextAction)}</span>` : ''}
+      <div class="deal-ctrl"><label class="sr-only" for="st-${c.id}">Étape de ${esc(name(c))}</label><select id="st-${c.id}" class="no-open" data-stage-sel="${c.id}">${DB.STAGES.map((k) => `<option value="${k}" ${st === k ? 'selected' : ''}>${STAGE[k][0]}</option>`).join('')}</select>${NEXT_STAGE[st] ? `<button class="no-open adv" data-advance="${c.id}" title="Faire avancer vers « ${STAGE[NEXT_STAGE[st]][0]} »">Avancer →</button>` : ''}</div></article>`;
     return `<div class="card" style="margin-bottom:18px"><div class="filters" style="margin:0"><label class="sr-only" for="pq">Rechercher</label><input type="search" id="pq" placeholder="Nom, email, ville…" value="${esc(state.pipeQ)}"><span class="muted" style="font-size:.86rem">Glisse une carte vers une autre colonne (ou change l’étape dans la liste) : la modification est enregistrée et visible dans la fiche du contact.</span></div></div>
       <div class="kanban">${DB.STAGES.map((k) => { const col = list.filter((x) => x.st === k).sort((a, b) => b.s.spent - a.s.spent); const ca = col.reduce((t, x) => t + x.s.spent, 0);
         return `<section class="kcol" data-stage="${k}" aria-label="${STAGE[k][0]}"><header style="border-top-color:${STAGE[k][2]}"><div><b>${STAGE[k][0]}</b> <span class="n">${col.length}</span></div><span class="muted">${STAGE[k][1]}<br>${eur0(ca)} de CA cumulé</span></header>
@@ -311,8 +333,10 @@
   function gate() {
     $('#root').innerHTML = `<div class="gate"><form id="gateForm"><div class="logo">glowmie.</div><p class="muted" style="margin-top:0;font-weight:800;letter-spacing:.1em;font-size:.75rem">CRM · ESPACE ADMINISTRATEUR</p>
       <div class="field"><label for="code">Code d'accès administrateur</label><input id="code" type="password" autocomplete="off" required></div>
-      <p class="muted" style="font-size:.82rem">Démo : le code est indiqué dans le README. En production, l'accès passe par Supabase Auth avec un rôle <code>admin</code> vérifié côté serveur (RLS).</p>
+      <div class="demo-creds"><b>Accès de démonstration</b><br>Code d'accès : <code>glowmie-admin</code><br><button type="button" class="btn ghost sm" id="demoFill" style="margin-top:8px">Remplir avec le code de démo</button></div>
+      <p class="muted" style="font-size:.78rem">Prototype : aucun vrai compte n'est nécessaire. En production, l'accès passerait par Supabase Auth avec un rôle <code>admin</code> vérifié côté serveur.</p>
       <p id="gErr" style="color:var(--bad);font-weight:700"></p><button class="btn">Entrer</button> <a href="index.html" style="margin-left:10px;font-weight:700">← Boutique</a></form></div>`;
+    $('#demoFill').onclick = () => { $('#code').value = 'glowmie-admin'; $('#code').focus(); };
     $('#gateForm').onsubmit = (e) => { e.preventDefault(); try { DB.adminLogin($('#code').value); render(); } catch (err) { $('#gErr').textContent = err.message; } };
   }
 
@@ -341,6 +365,8 @@
     const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
     on('#cq', 'input', (e) => { state.clientQ = e.target.value; rerenderPage('#cq'); });
     on('#cseg', 'change', (e) => { state.clientSeg = e.target.value; render(); });
+    on('#csrc', 'change', (e) => { state.clientSrc = e.target.value; render(); });
+    on('#cstage', 'change', (e) => { state.clientStage = e.target.value; render(); });
     on('#oq', 'input', (e) => { state.orderQ = e.target.value; rerenderPage('#oq'); });
     on('#ost', 'change', (e) => { state.orderStatus = e.target.value; render(); });
     on('#logF', 'change', (e) => { state.logFilter = e.target.value; render(); });
@@ -379,6 +405,8 @@
   document.addEventListener('click', (e) => {
     const cl = e.target.closest('[data-client]'); const or = e.target.closest('[data-order]'); const pr = e.target.closest('[data-prod]');
     const sg = e.target.closest('[data-seg]'); const rv = e.target.closest('[data-rev]'); const ms = e.target.closest('[data-msg]');
+    const adv = e.target.closest('[data-advance]');
+    if (adv) { const id = adv.dataset.advance, to = NEXT_STAGE[DB.stageOf(DB.customer(id))]; if (to) { DB.setStage(id, to); toast(name(DB.customer(id)) + ' → ' + STAGE[to][0]); render(); } return; }
     if (e.target.closest('.switch, .no-open')) return;
     if (ms) { DB.setMessageStatus(ms.dataset.msg, ms.dataset.to); toast('Message : ' + MSG[ms.dataset.to]); render(); return; }
     if (or) { e.preventDefault(); orderSheet(or.dataset.order); return; }
