@@ -322,3 +322,15 @@ main.is-home { padding-top: 0; animation: none; }
   .hero-foot { bottom: 4vh; }
   .wordmark { top: 30%; }
 }
+
+/* FAQ & contact */
+.faq-wrap { width: min(1440px, 100% - 40px); max-width: none; padding-top: 10px; }
+.faq-wrap > * { max-width: 900px; }
+.faq-group { margin-bottom: 34px; }
+.faq-group h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); color: var(--plum); text-transform: uppercase; letter-spacing: -.03em; margin: 0 0 6px; }
+.faq-group summary { gap: 16px; }
+.faq-group details p { margin: 0; }
+.contact-wrap textarea, .contact-wrap select { width: 100%; }
+.contact-side { display: grid; gap: 16px; }
+.confirm-panel { text-align: center; padding: 40px 24px; }
+.confirm-panel .big-heart { font-size: 4rem; display: inline-block; }
