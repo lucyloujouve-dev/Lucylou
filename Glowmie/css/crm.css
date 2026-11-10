@@ -167,3 +167,11 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .msg-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
 .msg p { margin: 8px 0 10px; }
 .msg-nouveau { background: #e6f4ff; color: #1d5b8f; } .msg-en_cours { background: #fff1c2; color: #8a6400; } .msg-traite { background: #dff5e7; color: #1f7a48; }
+.deal-src { font-size: .72rem; font-weight: 800; color: var(--berry); }
+.deal-next { font-size: .74rem; background: var(--bg); border-radius: 8px; padding: 4px 6px; }
+.deal-ctrl { display: grid; gap: 4px; }
+.deal-ctrl select { min-width: 0; }
+.deal .adv { margin-top: 4px; border: 0; background: var(--berry); color: #fff; border-radius: 8px; padding: 5px 8px; font-size: .72rem; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.deal .adv:hover { background: var(--berry-dark); }
+.demo-creds { background: var(--petal); border-radius: 14px; padding: 12px 14px; margin: 4px 0 12px; font-size: .9rem; color: var(--berry-dark); }
+.demo-creds code { font-weight: 800; font-size: 1rem; }
