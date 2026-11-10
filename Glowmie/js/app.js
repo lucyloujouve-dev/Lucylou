@@ -755,6 +755,64 @@
     if (del) del.onclick = () => { if (confirm('Supprimer ton compte ? Tes données personnelles seront anonymisées (les commandes restent conservées pour la comptabilité).')) { DB.deleteCustomer(DB.me().id); toast('Compte supprimé'); location.hash = '#/'; } };
   }
 
+  /* ---------- FAQ & contact ---------- */
+  const FAQ = [
+    ['Commande & livraison', [
+      ['Quels sont les délais et frais de livraison ?', 'Ta commande part sous 24 h et arrive en 48 h environ en Colissimo. La livraison est offerte dès 35 € d’achat, sinon elle coûte 4,90 €.'],
+      ['Comment suivre ma commande ?', 'Dès qu’elle est expédiée, son statut et son numéro de suivi apparaissent dans <a href="#/compte">Mon compte › Commandes</a>.'],
+      ['Puis-je modifier ou annuler ma commande ?', 'Tant qu’elle est au statut « payée », écris-nous via la <a href="#/contact">page contact</a> avec ton numéro de commande : on s’en occupe.']]],
+    ['Paiement & codes promo', [
+      ['Le paiement est-il sécurisé ?', 'Le paiement passe par Stripe. Sur ce prototype, il est simulé en mode test : aucune carte n’est débitée et aucune donnée bancaire n’est conservée.'],
+      ['Où saisir un code promo ?', 'Dans ton panier, juste au-dessus du total. <b>HELLOGLOW</b> t’offre -10 % sur ta première commande.'],
+      ['Les prix sont-ils TTC ?', 'Oui, tous nos prix sont affichés en euros TTC, et aucun produit ne dépasse 50 €.']]],
+    ['Retours', [
+      ['Je peux changer d’avis ?', 'Bien sûr : tu as 30 jours pour nous retourner un produit non ouvert, et le retour est gratuit.'],
+      ['Mon produit ne me convient pas, que faire ?', 'Écris-nous : on t’aide à trouver une alternative plus adaptée à ta peau, ou on te rembourse.']]],
+    ['Produits & routine', [
+      ['Par quoi commencer ?', 'Fais le <a href="#/quiz">quiz Find your glow</a> : en 1 minute, il te propose une routine en 3 étapes adaptée à ta peau.'],
+      ['Mes produits conviennent-ils aux peaux sensibles ?', 'Nos formules sont pensées douces. Daily Cloud et Melt In sont nos favoris pour les peaux réactives. En cas de doute, teste d’abord sur une petite zone.'],
+      ['Comment conserver mes produits ?', 'À l’abri de la chaleur et de la lumière, bouchon bien fermé. La durée après ouverture est indiquée sur chaque flacon.']]],
+    ['Compte & Glow Club', [
+      ['Comment fonctionne le Glow Club ?', 'Chaque euro dépensé te rapporte 10 points. Plus tu cumules, plus tu montes de niveau (Glow, Shine, Superstar). Détails sur la page <a href="#/club">Glow Club</a>.'],
+      ['Comment supprimer mes données ?', 'Depuis <a href="#/compte">Mon compte › Préférences & données</a>, tu peux exporter ou supprimer tes données et retirer ton consentement à tout moment.']]]
+  ];
+  views.faq = () => `<section class="page-hero"><p class="eyebrow">Aide</p><h1>FAQ</h1><p>Les réponses aux questions qu’on nous pose le plus souvent. Tu ne trouves pas la tienne ? <a href="#/contact">Écris-nous</a>.</p></section>
+    <div class="wrap faq-wrap">${FAQ.map(([title, qs]) => `<section class="faq-group" data-reveal><h2>${title}</h2><div class="acc">${qs.map(([q, a]) => `<details><summary>${q}</summary><div><p>${a}</p></div></details>`).join('')}</div></section>`).join('')}
+      <div class="panel" style="text-align:center;margin:20px 0 80px" data-reveal><h3>Encore une question ?</h3><p>La team Glowmie te répond sous 48 h ouvrées.</p><a class="btn" href="#/contact">Nous contacter →</a></div></div>`;
+
+  const SUBJECTS = ['Question produit', 'Ma commande', 'Retour ou remboursement', 'Glow Club', 'Partenariat', 'Autre'];
+  views.contact = () => {
+    const me = DB.me();
+    return `<section class="page-hero"><p class="eyebrow">Écris-nous</p><h1>Contact</h1><p>Une question sur un produit, ta commande ou ta routine ? On te répond sous 48 h ouvrées.</p></section>
+    <div class="wrap two-col contact-wrap">
+      <form class="panel" id="contactForm" novalidate>
+        <div class="fields-2"><div class="field"><label for="ctFirst">Prénom</label><input id="ctFirst" type="text" required autocomplete="given-name" value="${esc(me ? me.firstName : '')}"></div><div class="field"><label for="ctLast">Nom</label><input id="ctLast" type="text" autocomplete="family-name" value="${esc(me ? me.lastName : '')}"></div></div>
+        <div class="field"><label for="ctEmail">Email</label><input id="ctEmail" type="email" required autocomplete="email" value="${esc(me ? me.email : '')}"></div>
+        <div class="fields-2"><div class="field"><label for="ctSubject">Sujet</label><select id="ctSubject">${SUBJECTS.map((s) => `<option>${s}</option>`).join('')}</select></div><div class="field"><label for="ctOrder">N° de commande <span class="muted">(facultatif)</span></label><input id="ctOrder" type="text" placeholder="GLW-1234"></div></div>
+        <div class="field"><label for="ctMsg">Message</label><textarea id="ctMsg" rows="6" required minlength="10" placeholder="Dis-nous tout…"></textarea></div>
+        <label class="check"><input type="checkbox" id="ctOk" required> J’accepte que Glowmie utilise ces informations pour répondre à ma demande (<a href="#/legal/confidentialite">confidentialité</a>).</label>
+        <p class="error" id="ctErr" aria-live="assertive"></p>
+        <button class="btn">Envoyer mon message <span class="arrow">→</span></button>
+      </form>
+      <aside class="contact-side">
+        <div class="panel"><h3>Service client</h3><p>Du lundi au vendredi, 9 h – 18 h.<br>Réponse sous 48 h ouvrées.</p></div>
+        <div class="panel"><h3>Questions fréquentes</h3><p>Livraison, retours, codes promo, Glow Club…</p><a class="btn ghost" href="#/faq">Voir la FAQ →</a></div>
+        <p class="muted" style="font-size:.85rem">Projet fictif : les messages sont enregistrés dans ton navigateur et apparaissent dans le CRM (rubrique Messages).</p>
+      </aside>
+    </div>`;
+  };
+  function contactMount() {
+    $('#contactForm').onsubmit = (e) => {
+      e.preventDefault();
+      const v = (id) => $('#' + id).value.trim();
+      const err = !v('ctFirst') ? 'Indique ton prénom.' : !/^\S+@\S+\.\S+$/.test(v('ctEmail')) ? 'Indique un email valide.' : v('ctMsg').length < 10 ? 'Ton message est un peu court (10 caractères minimum).' : !$('#ctOk').checked ? 'Coche la case pour qu’on puisse te répondre.' : '';
+      if (err) return ($('#ctErr').textContent = err);
+      DB.contactMessage({ firstName: v('ctFirst'), lastName: v('ctLast'), email: v('ctEmail'), subject: $('#ctSubject').value, orderNumber: v('ctOrder'), message: v('ctMsg') });
+      $('#contactForm').outerHTML = `<div class="panel confirm-panel" role="status"><span class="big-heart">💌</span><h2>Merci ${esc(v('ctFirst'))} !</h2><p>Ton message est bien arrivé. La team Glowmie te répond sous 48 h ouvrées à <b>${esc(v('ctEmail'))}</b>.</p><a class="btn" href="#/shop">Retour au shop →</a></div>`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+  }
+
   /* ---------- pages légales ---------- */
   const LEGAL = {
     mentions: ['Mentions légales', [['Éditeur', 'Glowmie est une marque fictive créée dans le cadre d’un projet scolaire. Aucune activité commerciale réelle n’est exercée.'], ['Hébergement', 'Prototype local. Version cible : Vercel Inc. (hébergement) et Supabase (base de données).'], ['Propriété intellectuelle', 'Les visuels, textes et illustrations de ce site sont réalisés pour le projet.']]],
@@ -768,8 +826,8 @@
 
   /* ================= ROUTEUR ================= */
   let cleanup = [], pageRepaint = null, lastRoute = '';
-  const mounts = { home: homeMount, shop: shopMount, produit: produitMount, quiz: () => { quiz.i = 0; quiz.answers = {}; quizMount(); }, compte: compteMount, panier: panierMount, checkout: checkoutMount };
-  const titles = { home: 'Good skin. Good mood.', shop: 'Shop', produit: 'Produit', quiz: 'Find your glow', story: 'Our story', club: 'Glow Club', journal: 'Glow Journal', compte: 'Mon compte', panier: 'Panier', checkout: 'Paiement', confirmation: 'Merci !', legal: 'Informations' };
+  const mounts = { home: homeMount, shop: shopMount, produit: produitMount, quiz: () => { quiz.i = 0; quiz.answers = {}; quizMount(); }, compte: compteMount, panier: panierMount, checkout: checkoutMount, contact: contactMount };
+  const titles = { home: 'Good skin. Good mood.', shop: 'Shop', produit: 'Produit', quiz: 'Find your glow', story: 'Our story', club: 'Glow Club', journal: 'Glow Journal', compte: 'Mon compte', panier: 'Panier', checkout: 'Paiement', confirmation: 'Merci !', legal: 'Informations', faq: 'FAQ', contact: 'Contact' };
 
   function parse() { const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean); return { name: parts[0] || 'home', arg: parts[1] }; }
   function render() {
