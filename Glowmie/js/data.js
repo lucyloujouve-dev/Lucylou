@@ -316,6 +316,17 @@ window.GLOW_SEED = (function () {
       if (c.consent.newsletter) logs.push({ id: 'l' + logs.length, automationId: 'abandoned', customerId: c.id, at: at + DAY, status: at + DAY < now ? 'envoye' : 'planifie', opened: r() < 0.5, clicked: r() < 0.25, converted: r() < 0.18 });
     }
   }
+  // source d'acquisition, historique des échanges et prochaine action de chaque contact
+  const SRC = ['instagram', 'instagram', 'tiktok', 'tiktok', 'partenaire', 'salon', 'site', 'site', 'bouche'];
+  const FIRST = { instagram: ['dm', 'DM Instagram : question sur la routine, lien vers le quiz envoyé'], tiktok: ['dm', 'Commentaire TikTok : réponse avec le code HELLOGLOW'], partenaire: ['email', 'Arrivée via le code de la créatrice partenaire @lili.glow'], salon: ['salon', 'Rencontre au stand Beauty Days Paris, échantillon Glow Drops offert'], site: ['email', 'Email de bienvenue envoyé après l’inscription'], bouche: ['note', 'Recommandée par une cliente fidèle (parrainage)'] };
+  const NEXT = ['Relancer avec le code HELLOGLOW', 'Envoyer un échantillon Daily Cloud', 'Proposer le coffret The Glow Routine', 'Demander un avis sur la dernière commande', 'Inviter au Glow Club VIP', 'Appeler pour un conseil routine'];
+  customers.forEach((c, i) => {
+    c.source = SRC[Math.floor(r() * SRC.length)];
+    c.exchanges = [{ id: 'x' + i + 'a', at: c.createdAt + 3600000, type: FIRST[c.source][0], text: FIRST[c.source][1], by: 'Équipe Glowmie' }];
+    if (r() < 0.45) c.exchanges.push({ id: 'x' + i + 'b', at: Math.min(now - DAY, c.createdAt + Math.floor(r() * 40 + 3) * DAY), type: pick(['email', 'appel', 'dm']), text: pick(['Conseil personnalisé sur la routine du matin', 'Question sur la livraison, réponse envoyée', 'Retour très positif sur Glow Drops', 'Intéressée par le coffret pour l’offrir']), by: pick(['Inès (service client)', 'Tom (CRM)']) });
+    if (r() < 0.8) c.nextAction = { text: pick(NEXT), due: now + Math.floor(r() * 14 - 3) * DAY };
+  });
+
   // quelques notes CRM
   customers[0].notes = 'Cliente très active sur Instagram, a tagué la marque 3 fois.';
 
@@ -479,8 +490,9 @@ window.GLOW_SEED = (function () {
   ].map(([ci, subject, message, days, status], i) => {
     const c = customers[ci], at = Math.round(now - days * DAY);
     events.push({ id: 'e' + events.length, type: 'contact_message', customerId: c.id, at, data: { messageId: 'm' + (i + 1) } });
+    c.exchanges.push({ id: 'xm' + i, at, type: 'formulaire', text: subject + ' : ' + message, by: c.firstName });
     return { id: 'm' + (i + 1), customerId: c.id, name: c.firstName + ' ' + c.lastName, email: c.email, subject, orderNumber: '', message, at, status };
   });
 
-  return { version: 16, photos, products, categories, articles, promos, automations, customers, orders, events, logs, quizResults, visits, reviews, messages };
+  return { version: 17, photos, products, categories, articles, promos, automations, customers, orders, events, logs, quizResults, visits, reviews, messages };
 })();
