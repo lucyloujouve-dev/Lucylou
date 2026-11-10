@@ -88,7 +88,7 @@ window.GlowStage = (function () {
         const drop = (i) => (1 - easeOutBack(clamp((T - 0.35 - i * 0.22) / 1.2))) * H * 2.4;
         const sp = mobile ? 0.5 : 0.95;
         set('p:glow-drops', { x: lerp(mobile ? 0 : 0.02 * W, -W * 0.38, easeOut(p)), y: (mobile ? 0.02 : -0.12) * H + drop(0) - p * H * 0.1, z: 2, rx: -my * 0.08, ry: Math.sin(t * 0.55) * 0.38 + p * 1.1 + mx * 0.25, rz: Math.sin(t * 0.8) * 0.04 - p * 0.15, s: sp * (1 - p * 0.12) });
-        set('p:daily-cloud', { x: (mobile ? -0.42 : -0.5) * W - easeOut(p) * W * 0.9, y: (mobile ? -0.3 : -0.42) * H + drop(1), z: 1, ry: Math.sin(t * 0.5 + 1) * 0.3 + mx * 0.2, rz: 0.08, s: mobile ? 0.28 : 0.52 });
+        set('p:daily-cloud', { x: (mobile ? -0.42 : -0.5) * W - easeOut(p) * W * 0.9, y: (mobile ? -0.3 : -0.24) * H + drop(1), z: 1, ry: Math.sin(t * 0.5 + 1) * 0.3 + mx * 0.2, rz: 0.08, s: mobile ? 0.28 : 0.52 });
         set('p:sun-sunny', { x: (mobile ? 0.42 : 0.5) * W + easeOut(p) * W * 0.9, y: (mobile ? -0.26 : -0.3) * H + drop(2), z: 1.2, ry: Math.sin(t * 0.55 + 2) * 0.3 + mx * 0.2, rz: -0.12, s: mobile ? 0.28 : 0.56 });
         scatter('heart', 4, t, 0.5 - p * 0.6, { spread: 1.05, size: 0.42 });
         scatter('star', 4, t, 0.5 - p * 0.6, { spread: 1.15, size: 0.42 });
